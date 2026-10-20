@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>塾のファイル</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../style.css">
+  <style>
+    main { max-width: 760px; margin: 0 auto; padding: 48px 16px 80px; }
+    h1 { margin: 0 0 4px; font-size: 1.8rem; font-weight: 900; }
+    .lead { margin: 0 0 28px; color: var(--muted); }
+    .files { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+    .files li {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+    }
+    .files .name { flex: 1; min-width: 0; font-weight: 700; text-decoration: none; overflow-wrap: anywhere; }
+    .files .name:hover { color: var(--accent); }
+    .files .size { color: var(--muted); font-size: 0.85rem; white-space: nowrap; }
+    .files .dl {
+      padding: 4px 12px; border-radius: 999px;
+      background: var(--accent); color: #fff;
+      font-size: 0.85rem; font-weight: 700; text-decoration: none; white-space: nowrap;
+    }
+    .status { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>塾のファイル</h1>
+    <p class="lead">ファイル名を押すと開き、「ダウンロード」で保存できます。</p>
+    <p class="status">読み込み中…</p>
+    <ul class="files"></ul>
+  </main>
+
+  <script>
+    // juku フォルダの中身を GitHub から取ってきて一覧にする
+    const API = "https://api.github.com/repos/onasu-susu/onasu-susu.github.io/contents/juku?ref=main";
+    const list = document.querySelector(".files");
+    const status = document.querySelector(".status");
+
+    function size(bytes) {
+      if (bytes < 1024) return bytes + " B";
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + " KB";
+      return (bytes / 1024 / 1024).toFixed(1) + " MB";
+    }
+
+    fetch(API)
+      .then((r) => {
+        if (!r.ok) throw new Error(r.status);
+        return r.json();
+      })
+      .then((items) => {
+        const files = items
+          .filter((f) => f.type === "file" && !f.name.startsWith(".") && f.name !== "index.html")
+          .sort((a, b) => a.name.localeCompare(b.name, "ja", { numeric: true }));
+
+        if (files.length === 0) {
+          status.textContent = "まだファイルはありません。";
+          return;
+        }
+        status.hidden = true;
+
+        files.forEach((f) => {
+          const href = encodeURIComponent(f.name);
+          const li = document.createElement("li");
+
+          const name = document.createElement("a");
+          name.className = "name";
+          name.href = href;
+          name.target = "_blank";
+          name.rel = "noopener";
+          name.textContent = f.name;
+
+          const s = document.createElement("span");
+          s.className = "size";
+          s.textContent = size(f.size);
+
+          const dl = document.createElement("a");
+          dl.className = "dl";
+          dl.href = href;
+          dl.download = f.name;
+          dl.textContent = "ダウンロード";
+
+          li.append(name, s, dl);
+          list.append(li);
+        });
+      })
+      .catch(() => {
+        status.textContent = "一覧を読み込めませんでした。少し時間をおいて、もう一度開いてください。";
+      });
+  </script>
+</body>
+</html>
