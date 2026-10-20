@@ -3,20 +3,23 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>onasu のゲーム作品集</title>
-  <meta name="description" content="Unity と C# で作ったゲームの作品集です。">
+  <title>吉井亮翔 / Akito Yoshii</title>
+  <meta name="description" content="ゲーム制作・写真・編曲と楽譜出版をしている、龍谷大学 先端理工学部の吉井亮翔（Akito Yoshii）のポートフォリオです。">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- ここを書きかえると、名前が変わります（このファイルの「onasu」を全部さがして変えてください） -->
   <header class="nav">
-    <a class="logo" href="#top">onasu<span>.</span></a>
+    <a class="logo" href="#top">Akito<span>.</span></a>
     <nav>
-      <a href="#works">作品</a>
-      <a href="#about">じこしょうかい</a>
+      <a href="#profile">プロフィール</a>
+      <a href="#games">ゲーム</a>
+      <a href="#photos">写真</a>
+      <a href="#music">音楽</a>
+      <a href="#dev">開発</a>
+      <a href="#study">学び</a>
       <a href="#contact">れんらく</a>
     </nav>
   </header>
@@ -31,17 +34,40 @@
         <i style="--c:#b36bff; --x:48%; --d:3.2s"></i>
       </div>
       <p class="hello">こんにちは！</p>
-      <h1>Unity で<br><span class="pop">ゲーム</span>を作っています</h1>
-      <p class="lead">ゼミで作ったゲームを、ここにまとめています。<br>パズル・アクション・シミュレーションなど、いろいろ作っています。</p>
-      <a class="button" href="#works">作品を見る</a>
+      <h1>吉井亮翔<span class="en">Akito Yoshii</span></h1>
+      <p class="lead">ゲームを作って、写真を撮って、楽譜を書いています。<br>つくることが好きな、情報系の大学生です。</p>
+      <ul class="roles">
+        <li>ゲーム制作</li><li>フォトグラファー</li><li>編曲・楽譜出版</li><li>バンド・ライブ活動</li>
+      </ul>
+      <a class="button" href="#games">作品を見る</a>
     </section>
 
-    <section id="works" class="section">
-      <h2>作品</h2>
+    <!-- プロフィール -->
+    <section id="profile" class="section">
+      <h2>プロフィール</h2>
+      <div class="profile">
+        <dl>
+          <dt>名前</dt><dd>吉井 亮翔（よしい あきと）／ Akito Yoshii</dd>
+          <dt>所属</dt><dd>龍谷大学 先端理工学部 数理・情報科学課程（2024年度入学）</dd>
+          <dt>活動</dt><dd>ゲーム制作、バンド・ライブ活動、フォトグラファー、編曲家、楽譜出版</dd>
+          <dt>サークル</dt><dd>Rock'n'roadST 18期 部長（学生代表）</dd>
+        </dl>
+        <div class="stats">
+          <div><b>5</b><span>つ以上の<br>ゲーム作品</span></div>
+          <div><b>40</b><span>曲の楽譜を<br>販売</span></div>
+          <div><b>22</b><span>枚の<br>写真を掲載</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ゲーム -->
+    <section id="games" class="section">
+      <h2>ゲーム制作</h2>
+      <p class="intro">大学のゼミで、Unity と C# を使ってゲームを作っています。</p>
       <div class="works">
 
         <article class="card">
-          <div class="shot shot-cover"><img src="images/tetris.png" alt="テトリスのブロックが積まれている画面"></div>
+          <div class="shot shot-cover"><img src="images/tetris.png" alt="テトリスのブロックが積まれている画面" loading="lazy"></div>
           <div class="body">
             <h3>テトリス</h3>
             <p>ふつうのテトリスに加えて、3×3 のランダムな形のブロックや、列を消すと縦にも消える「ばくだんブロック」が出てくるパーティーモードを作りました。スマホのタッチ操作にも対応しています。</p>
@@ -50,7 +76,7 @@
         </article>
 
         <article class="card">
-          <div class="shot shot-tall"><img src="images/sweets.png" alt="おかしなタワーのタイトル画面"></div>
+          <div class="shot shot-tall"><img src="images/sweets.png" alt="おかしなタワーのタイトル画面" loading="lazy"></div>
           <div class="body">
             <h3>おかしなタワー</h3>
             <p>お菓子を落として、高く積みあげるゲームです。着地して 2 秒止まるとその場で固定されます。お皿から落としたらゲームオーバー。お菓子の絵はすべてプログラムで描いています。</p>
@@ -59,7 +85,7 @@
         </article>
 
         <article class="card">
-          <div class="shot shot-cover"><img src="images/arena.jpg" alt="ふっとびアリーナのタイトル画面"></div>
+          <div class="shot shot-cover"><img src="images/arena.jpg" alt="ふっとびアリーナのタイトル画面" loading="lazy"></div>
           <div class="body">
             <h3>ふっとびアリーナ</h3>
             <p>ダメージをためて、相手をステージの外までふっとばす対戦アクションゲームです。コンピューターとも戦えます。</p>
@@ -68,7 +94,7 @@
         </article>
 
         <article class="card">
-          <div class="shot shot-cover"><img src="images/biosim.jpg" alt="草原でキツネとネズミが動いているシミュレーターの画面"></div>
+          <div class="shot shot-cover"><img src="images/biosim.jpg" alt="草原でキツネとネズミが動いているシミュレーターの画面" loading="lazy"></div>
           <div class="body">
             <h3>いきもの繁殖シミュレーター</h3>
             <p>微生物から動物まで 23 種類の生き物が、食べて・にげて・子どもを作って増えていきます。温暖化や開発、外来種など、人間のえいきょうを自由にあたえて変化を観察できます。</p>
@@ -77,7 +103,7 @@
         </article>
 
         <article class="card">
-          <div class="shot shot-icon"><img src="images/owl.png" alt="ホーホー博士（フクロウ）"></div>
+          <div class="shot shot-icon"><img src="images/owl.png" alt="ホーホー博士（フクロウ）" loading="lazy"></div>
           <div class="body">
             <h3>ホーホー博士の水平思考クイズ</h3>
             <p>AI が出題者になって、「はい・いいえ・関係ありません」で答えてくれる水平思考クイズ（ウミガメのスープ）です。</p>
@@ -88,23 +114,136 @@
       </div>
     </section>
 
-    <section id="about" class="section about">
-      <h2>じこしょうかい</h2>
-      <div class="about-box">
-        <!-- 自由に書きかえてください -->
-        <p>大学のゼミで、Unity を使ったゲーム作りをしています。<br>遊んだ人が「おもしろい！」と思えるゲームを作るのが目標です。</p>
-        <h3>使っているもの</h3>
-        <ul class="tags big"><li>Unity</li><li>C#</li><li>GitHub</li><li>Claude Code</li></ul>
+    <!-- 写真 -->
+    <section id="photos" class="section">
+      <h2>写真</h2>
+      <p class="intro">フォトグラファーとして、旅先の風景や祭り、ライブ、カフェなどを撮っています。写真をクリックすると大きく見られます。</p>
+      <div class="filters" role="group" aria-label="写真の種類">
+        <button class="on" data-filter="all">すべて</button>
+        <button data-filter="scene">風景</button>
+        <button data-filter="town">寺・祭り・町</button>
+        <button data-filter="live">ライブ</button>
+        <button data-filter="still">カフェ・物撮り</button>
+        <button data-filter="animal">生き物</button>
+      </div>
+      <div class="gallery">
+        <figure data-cat="scene"><img src="images/photos/p094.jpg" alt="沖縄の白い砂浜と海" loading="lazy"><figcaption>沖縄の海</figcaption></figure>
+        <figure data-cat="town"><img src="images/photos/p204.jpg" alt="安倍文殊院の朱色のお堂" loading="lazy"><figcaption>安倍文殊院</figcaption></figure>
+        <figure data-cat="live"><img src="images/photos/p252.jpg" alt="ライブハウスの照明と観客" loading="lazy"><figcaption>ライブ</figcaption></figure>
+        <figure data-cat="town"><img src="images/photos/p219.jpg" alt="たくさんの風鈴" loading="lazy"><figcaption>風鈴祭り</figcaption></figure>
+        <figure data-cat="scene"><img src="images/photos/p268.jpg" alt="高い場所から見た天橋立" loading="lazy"><figcaption>天橋立</figcaption></figure>
+        <figure data-cat="still"><img src="images/photos/p246.jpg" alt="カフェの抹茶ドリンク" loading="lazy"><figcaption>カフェ</figcaption></figure>
+        <figure data-cat="animal"><img src="images/photos/p289.jpg" alt="青空を飛ぶ鳥" loading="lazy"><figcaption>伊根の野鳥</figcaption></figure>
+        <figure data-cat="scene"><img src="images/photos/p270.jpg" alt="満開の桜" loading="lazy"><figcaption>桜</figcaption></figure>
+        <figure data-cat="town"><img src="images/photos/p212.jpg" alt="赤い鳥居が続く石段" loading="lazy"><figcaption>安倍文殊院の鳥居</figcaption></figure>
+        <figure data-cat="animal"><img src="images/photos/p067.jpg" alt="水槽の中のクマノミ" loading="lazy"><figcaption>クマノミ（沖縄）</figcaption></figure>
+        <figure data-cat="live"><img src="images/photos/p256.jpg" alt="ステージで演奏するバンド" loading="lazy"><figcaption>ライブ</figcaption></figure>
+        <figure data-cat="scene"><img src="images/photos/p273.jpg" alt="青空と赤い彼岸花" loading="lazy"><figcaption>彼岸花</figcaption></figure>
+        <figure data-cat="still"><img src="images/photos/p250.jpg" alt="器に入ったプリン" loading="lazy"><figcaption>プリン</figcaption></figure>
+        <figure data-cat="town"><img src="images/photos/p260.jpg" alt="古い町並み" loading="lazy"><figcaption>町並み</figcaption></figure>
+        <figure data-cat="scene"><img src="images/photos/p162.jpg" alt="青い空と沖縄の海" loading="lazy"><figcaption>沖縄の空と海</figcaption></figure>
+        <figure data-cat="animal"><img src="images/photos/p249.jpg" alt="犬の横顔" loading="lazy"><figcaption>なす</figcaption></figure>
+        <figure data-cat="town"><img src="images/photos/p220.jpg" alt="ならんだガラスの風鈴" loading="lazy"><figcaption>風鈴</figcaption></figure>
+        <figure data-cat="scene"><img src="images/photos/p280.jpg" alt="紫色の紫陽花" loading="lazy"><figcaption>紫陽花</figcaption></figure>
+        <figure data-cat="animal"><img src="images/photos/p287.jpg" alt="伊根の舟屋とカモメ" loading="lazy"><figcaption>伊根のカモメ</figcaption></figure>
+        <figure data-cat="scene"><img src="images/photos/p269.jpg" alt="丸い輪の中から見た天橋立" loading="lazy"><figcaption>天橋立</figcaption></figure>
+        <figure data-cat="town"><img src="images/photos/p195.jpg" alt="夜の灯りの中に立つ人の後ろ姿" loading="lazy"><figcaption>夜の灯り</figcaption></figure>
+        <figure data-cat="still"><img src="images/photos/p292.jpg" alt="フィギュアの物撮り" loading="lazy"><figcaption>物撮り</figcaption></figure>
+      </div>
+      <p class="more"><a href="https://www.instagram.com/ak.photo613/" target="_blank" rel="noopener">もっと見る → Instagram @ak.photo613</a></p>
+    </section>
+
+    <!-- 音楽 -->
+    <section id="music" class="section">
+      <h2>編曲・楽譜出版</h2>
+      <p class="intro">「<b>Shiu</b>」の名前で、バンド曲のドラム譜を中心に楽譜を作って販売しています。原曲を耳で聴いて書き起こし、そのままの「完コピ版」と、たたきやすくした「簡略版」を作っています。</p>
+      <div class="music">
+        <div class="music-info">
+          <div class="big-number"><b>40</b><span>曲 販売済み</span></div>
+          <ul class="tags big"><li>ドラム譜</li><li>完コピ</li><li>簡略版</li><li>MuseScore</li></ul>
+          <p class="note">サークル Rock'n'roadST ではバンド・ライブ活動もしています。</p>
+        </div>
+        <ul class="songs">
+          <li>620</li><li>Basket Case</li><li>come back my dog</li><li>Dear My Friend</li><li>Departure</li>
+          <li>keep going</li><li>kitchen</li><li>midnight cruising</li><li>MONSTER DANCE</li><li>MyFirstKiss</li>
+          <li>NE-TAXI</li><li>Set The Fire</li><li>squall</li><li>STAY GOLD</li><li>Tank-top of the world</li>
+          <li>アパシー</li><li>かわE</li><li>げんきもりもり！モーリーファンタジー</li><li>シルエット</li><li>ナイトオンザプラネット</li>
+          <li>ないものねだり</li><li>ハッピーウェディング前ソング</li><li>フルドライブ</li><li>マイリッチサマーブルース</li><li>メシアになった</li>
+          <li>ラブホテル</li><li>ロキ</li><li>愛の標識</li><li>運命</li><li>喜志駅周辺なんもない</li>
+          <li>恐竜〜Dynamite Soul〜</li><li>盛者必衰の理、お断り</li><li>絶望MAQUIA</li><li>素晴らしい世界</li><li>曇天</li>
+          <li>百八円の恋</li><li>本当はね、</li><li>無線LANばり便利</li><li>癒着☆NIGHT</li><li>栞</li>
+        </ul>
       </div>
     </section>
 
+    <!-- 開発 -->
+    <section id="dev" class="section">
+      <h2>組み込み・IoT</h2>
+      <div class="dev">
+        <div>
+          <h3>M5Stack × Firebase ワンタイムQR認証</h3>
+          <p>M5Stack の画面に表示した QR コードをスマホで読みとり、Google アカウントでログインして本人確認をするシステムです。QR コードの中のトークンは 1 回しか使えず、同じアカウントで 2 回認証することもできません。認証の記録は Cloud Firestore に保存します。</p>
+          <ul class="tags"><li>M5Stack</li><li>Firebase Hosting</li><li>Firebase Authentication</li><li>Cloud Firestore</li><li>JavaScript</li></ul>
+        </div>
+        <ol class="flow">
+          <li><b>M5Stack</b><span>ワンタイムの QR コードを表示</span></li>
+          <li><b>スマホ</b><span>QR を読みとってページを開く</span></li>
+          <li><b>Google ログイン</b><span>Firebase Authentication</span></li>
+          <li><b>チェック</b><span>トークンが正しい・未使用か確かめる</span></li>
+          <li><b>記録</b><span>Firestore に保存して、トークンを使用済みに</span></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- 学び -->
+    <section id="study" class="section">
+      <h2>大学での学び</h2>
+      <div class="study">
+        <div class="study-card">
+          <h3>プログラミングⅢ</h3>
+          <p>C 言語で、ポインタ・構造体・動的メモリ確保（malloc）・ファイル入出力・コマンドライン引数などを学びました。Python では、日本語のレビュー文を word2vec とロジスティック回帰で「ポジティブ／ネガティブ」に分類する感情分析にも取り組みました。</p>
+          <ul class="tags"><li>C</li><li>Python</li><li>機械学習</li></ul>
+        </div>
+        <div class="study-card">
+          <h3>アルゴリズムとデータ構造</h3>
+          <p>連結リスト・スタック・キュー・木・グラフといったデータ構造と、ソート、分割統治法、動的計画法、最短経路などのアルゴリズムを、C 言語で実装しながら学んでいます。</p>
+          <ul class="tags"><li>C</li><li>アルゴリズム</li></ul>
+        </div>
+        <div class="study-card">
+          <h3>数学・理論</h3>
+          <p>集合と論理、形式言語（言語と計算）、フーリエ解析など、情報科学の土台になる数学を学んでいます。数学のノートは Typst（jnote）で、定理や証明を見やすく整えて書いています。</p>
+          <ul class="tags"><li>集合と論理</li><li>形式言語</li><li>フーリエ解析</li><li>Typst</li></ul>
+        </div>
+        <div class="study-card">
+          <h3>情報システム・認知科学</h3>
+          <p>情報処理システムの仕組みのほか、認知科学では探索木や尺度構成法（係留効果）の実験を行い、Jupyter でデータを分析して考察をまとめました。</p>
+          <ul class="tags"><li>情報処理システム</li><li>認知科学</li><li>Jupyter</li></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- れんらく -->
     <section id="contact" class="section contact">
       <h2>れんらく</h2>
-      <p>作ったゲームのコードは GitHub にのせています。</p>
-      <a class="button" href="https://github.com/onasu-susu" target="_blank" rel="noopener">GitHub を見る</a>
+      <p>お仕事のご相談や感想など、お気軽にどうぞ。</p>
+      <div class="links">
+        <a class="button" href="mailto:onasu0613@gmail.com">メールを送る</a>
+        <a class="button sub" href="https://www.instagram.com/ak.photo613/" target="_blank" rel="noopener">Instagram（写真）</a>
+        <a class="button sub" href="https://www.instagram.com/ak.y613/" target="_blank" rel="noopener">Instagram（個人）</a>
+        <a class="button sub" href="https://github.com/onasu-susu" target="_blank" rel="noopener">GitHub</a>
+      </div>
     </section>
   </main>
 
-  <footer>© 2026 onasu</footer>
+  <!-- 写真を大きく見る画面 -->
+  <div class="viewer" hidden>
+    <button class="close" aria-label="閉じる">×</button>
+    <button class="prev" aria-label="前の写真">‹</button>
+    <figure><img alt=""><figcaption></figcaption></figure>
+    <button class="next" aria-label="次の写真">›</button>
+  </div>
+
+  <footer>© 2026 Akito Yoshii</footer>
+  <script src="main.js"></script>
 </body>
 </html>
