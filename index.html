@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>onasu のゲーム作品集</title>
+  <meta name="description" content="Unity と C# で作ったゲームの作品集です。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- ここを書きかえると、名前が変わります（このファイルの「onasu」を全部さがして変えてください） -->
+  <header class="nav">
+    <a class="logo" href="#top">onasu<span>.</span></a>
+    <nav>
+      <a href="#works">作品</a>
+      <a href="#about">じこしょうかい</a>
+      <a href="#contact">れんらく</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="blocks" aria-hidden="true">
+        <i style="--c:#ff7aa8; --x:8%;  --d:0s"></i>
+        <i style="--c:#ffa733; --x:22%; --d:1.6s"></i>
+        <i style="--c:#66e0b3; --x:71%; --d:0.8s"></i>
+        <i style="--c:#5aa9ff; --x:86%; --d:2.4s"></i>
+        <i style="--c:#b36bff; --x:48%; --d:3.2s"></i>
+      </div>
+      <p class="hello">こんにちは！</p>
+      <h1>Unity で<br><span class="pop">ゲーム</span>を作っています</h1>
+      <p class="lead">ゼミで作ったゲームを、ここにまとめています。<br>パズル・アクション・シミュレーションなど、いろいろ作っています。</p>
+      <a class="button" href="#works">作品を見る</a>
+    </section>
+
+    <section id="works" class="section">
+      <h2>作品</h2>
+      <div class="works">
+
+        <article class="card">
+          <div class="shot shot-cover"><img src="images/tetris.png" alt="テトリスのブロックが積まれている画面"></div>
+          <div class="body">
+            <h3>テトリス</h3>
+            <p>ふつうのテトリスに加えて、3×3 のランダムな形のブロックや、列を消すと縦にも消える「ばくだんブロック」が出てくるパーティーモードを作りました。スマホのタッチ操作にも対応しています。</p>
+            <ul class="tags"><li>Unity</li><li>C#</li><li>スマホ対応</li></ul>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="shot shot-tall"><img src="images/sweets.png" alt="おかしなタワーのタイトル画面"></div>
+          <div class="body">
+            <h3>おかしなタワー</h3>
+            <p>お菓子を落として、高く積みあげるゲームです。着地して 2 秒止まるとその場で固定されます。お皿から落としたらゲームオーバー。お菓子の絵はすべてプログラムで描いています。</p>
+            <ul class="tags"><li>Unity</li><li>C#</li><li>物理演算</li></ul>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="shot shot-cover"><img src="images/arena.jpg" alt="ふっとびアリーナのタイトル画面"></div>
+          <div class="body">
+            <h3>ふっとびアリーナ</h3>
+            <p>ダメージをためて、相手をステージの外までふっとばす対戦アクションゲームです。コンピューターとも戦えます。</p>
+            <ul class="tags"><li>Unity</li><li>C#</li><li>3D</li><li>対戦</li></ul>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="shot shot-cover"><img src="images/biosim.jpg" alt="草原でキツネとネズミが動いているシミュレーターの画面"></div>
+          <div class="body">
+            <h3>いきもの繁殖シミュレーター</h3>
+            <p>微生物から動物まで 23 種類の生き物が、食べて・にげて・子どもを作って増えていきます。温暖化や開発、外来種など、人間のえいきょうを自由にあたえて変化を観察できます。</p>
+            <ul class="tags"><li>Unity</li><li>C#</li><li>シミュレーション</li></ul>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="shot shot-icon"><img src="images/owl.png" alt="ホーホー博士（フクロウ）"></div>
+          <div class="body">
+            <h3>ホーホー博士の水平思考クイズ</h3>
+            <p>AI が出題者になって、「はい・いいえ・関係ありません」で答えてくれる水平思考クイズ（ウミガメのスープ）です。</p>
+            <ul class="tags"><li>Unity</li><li>C#</li><li>AI（Gemini）</li></ul>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+    <section id="about" class="section about">
+      <h2>じこしょうかい</h2>
+      <div class="about-box">
+        <!-- 自由に書きかえてください -->
+        <p>大学のゼミで、Unity を使ったゲーム作りをしています。<br>遊んだ人が「おもしろい！」と思えるゲームを作るのが目標です。</p>
+        <h3>使っているもの</h3>
+        <ul class="tags big"><li>Unity</li><li>C#</li><li>GitHub</li><li>Claude Code</li></ul>
+      </div>
+    </section>
+
+    <section id="contact" class="section contact">
+      <h2>れんらく</h2>
+      <p>作ったゲームのコードは GitHub にのせています。</p>
+      <a class="button" href="https://github.com/onasu-susu" target="_blank" rel="noopener">GitHub を見る</a>
+    </section>
+  </main>
+
+  <footer>© 2026 onasu</footer>
+</body>
+</html>
