@@ -553,3 +553,5 @@ h1 .en {
   .gallery { columns: 2; column-gap: 10px; }
   .gallery figure { margin-bottom: 10px; border-radius: 12px; }
 }
+
+.button.shop { margin-top: 16px; padding: 8px 24px; font-size: 0.95rem; }
