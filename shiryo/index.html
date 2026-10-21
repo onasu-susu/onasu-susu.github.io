@@ -103,7 +103,7 @@
   </main>
 
   <script>
-    // リロードしたら、前のスクロール位置やフォルダではなく、いつもページのいちばん上から表示する
+    // リロードしたら、ページのいちばん上から表示する（開いていたフォルダはそのまま。下の show を参照）
     if ("scrollRestoration" in history) history.scrollRestoration = "manual";
     if (location.hash) history.replaceState(null, "", location.pathname + location.search); // 前の「#フォルダ名」の形のアドレスで開いたとき
     window.scrollTo(0, 0);
@@ -222,8 +222,10 @@
       }
       say("");
       sortBox.hidden = false;
-      // リロードしたときや、はじめて開いたときは、いつも「資料」のいちばん上から
-      current = "";
+      // リロードしたときは、開いていたフォルダのまま（ブラウザが覚えている history.state から）
+      // はじめて開いたときは「資料」のいちばん上から
+      current = (history.state && history.state.folder) || "";
+      if (!folders.includes(current)) current = "";
       render();
     }
 
