@@ -75,6 +75,47 @@
     .logout:hover { border-color: var(--accent); color: var(--accent); }
     .logout[hidden] { display: none; }
     .back { display: inline-block; margin-bottom: 20px; color: var(--accent); font-weight: 700; text-decoration: none; }
+    .tools { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .tools[hidden] { display: none; }
+    .tools > span { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tools .sort { margin: 0 0 0 auto; white-space: nowrap; }
+    .pill {
+      padding: 6px 16px; border: 0; border-radius: 999px;
+      background: var(--accent); color: #fff;
+      font: inherit; font-size: 0.9rem; font-weight: 700; cursor: pointer; white-space: nowrap;
+    }
+    .pill.sub { background: var(--surface); color: var(--text); border: 2px solid var(--line); }
+    .pill:disabled { opacity: 0.6; cursor: wait; }
+    .pill[hidden] { display: none; }
+    .panel {
+      margin-bottom: 20px; padding: 18px;
+      background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow);
+    }
+    .panel[hidden] { display: none; }
+    .panel h2 { margin: 0 0 12px; font-size: 1.1rem; }
+    .panel h2::after { display: none; }
+    .panel p, .panel ol { margin: 0 0 12px; font-size: 0.9rem; color: var(--muted); }
+    .panel ol { padding-left: 1.4em; }
+    .panel li { margin-bottom: 4px; }
+    .panel code { padding: 1px 6px; border-radius: 6px; background: var(--bg); color: var(--text); overflow-wrap: anywhere; }
+    .panel .row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .panel select, .panel input[type="url"] {
+      flex: 1; min-width: 0; padding: 8px 14px;
+      border: 2px solid var(--line); border-radius: 999px;
+      background: var(--bg); color: var(--text); font: inherit;
+    }
+    .drop {
+      display: block; margin-bottom: 12px; padding: 22px 12px;
+      border: 2px dashed var(--line); border-radius: 12px;
+      text-align: center; color: var(--muted); cursor: pointer;
+    }
+    .drop.over, .drop:hover { border-color: var(--accent); color: var(--accent); }
+    .drop input { display: none; }
+    .picked { margin: 0 0 12px; padding-left: 1.2em; font-size: 0.9rem; overflow-wrap: anywhere; }
+    .picked:empty { display: none; }
+    .msg { font-weight: 700; }
+    .panel .msg { color: var(--text); }
+    .panel .msg.error { color: #d64545; }
   </style>
 </head>
 <body>
@@ -90,15 +131,61 @@
       <button>ひらく</button>
     </form>
     <p class="status" hidden></p>
-    <label class="sort" hidden>
-      並べ替え
-      <select>
-        <option value="name">名前（昇順）</option>
-        <option value="name-desc">名前（降順）</option>
-        <option value="old">追加日（昇順）</option>
-        <option value="new">追加日（降順）</option>
-      </select>
-    </label>
+    <div class="tools" hidden>
+      <span>
+        <button class="pill up-open" type="button" hidden>⬆ アップロード</button>
+        <button class="pill sub setup-open" type="button">アップロードの設定</button>
+      </span>
+      <label class="sort">
+        並べ替え
+        <select>
+          <option value="name">名前（昇順）</option>
+          <option value="name-desc">名前（降順）</option>
+          <option value="old">追加日（昇順）</option>
+          <option value="new">追加日（降順）</option>
+        </select>
+      </label>
+    </div>
+
+    <section class="panel upload" hidden>
+      <h2>アップロード</h2>
+      <label class="drop">
+        ここにファイルをドラッグするか、押して選んでください（いくつでも）
+        <input type="file" multiple>
+      </label>
+      <ul class="picked"></ul>
+      <div class="row">
+        <label for="up-folder">入れるフォルダ</label>
+        <select id="up-folder"></select>
+      </div>
+      <p>1 回に送れるのは合計 25MB までです。同じフォルダに同じ名前のファイルがあるときは、新しいファイルで置きかえます。</p>
+      <div class="row">
+        <button class="pill up-go" type="button">アップロードする</button>
+        <button class="pill sub up-close" type="button">閉じる</button>
+      </div>
+      <p class="msg" hidden></p>
+    </section>
+
+    <section class="panel setup" hidden>
+      <h2>アップロードの設定</h2>
+      <p>アップロードは、自分の Google アカウントで動かす受付（Google Apps Script）を通して GitHub に保存します。GitHub のトークンは受付の中にだけ置き、このサイトには出しません。</p>
+      <ol>
+        <li>GitHub で fine-grained トークンを作る（リポジトリは onasu-susu.github.io だけ、権限は Contents: Read and write）</li>
+        <li><a href="https://script.google.com/" target="_blank" rel="noopener">script.google.com</a> で新しいプロジェクトを作り、<a href="uploader.gs" target="_blank" rel="noopener">uploader.gs</a> の中身を貼り付ける</li>
+        <li>「プロジェクトの設定 → スクリプト プロパティ」に、<code>GITHUB_TOKEN</code>（1 のトークン）と <code>UPLOAD_KEY</code>（下の合言葉）を追加する</li>
+        <li>「デプロイ → 新しいデプロイ → ウェブアプリ」で、実行するユーザーを「自分」、アクセスできるユーザーを「全員」にしてデプロイし、出てきた URL を下に貼る</li>
+      </ol>
+      <p>合言葉（UPLOAD_KEY）：<code class="upload-key">…</code> <button class="pill sub copy-key" type="button">コピー</button></p>
+      <p>※ 合言葉は資料のパスワードから作られます。パスワードを変えたら、スクリプト プロパティの UPLOAD_KEY も新しい合言葉に入れかえてください。</p>
+      <div class="row">
+        <input type="url" placeholder="https://script.google.com/macros/s/…/exec" aria-label="受付の URL" autocomplete="off">
+      </div>
+      <div class="row">
+        <button class="pill setup-go" type="button">保存する</button>
+        <button class="pill sub setup-close" type="button">閉じる</button>
+      </div>
+      <p class="msg" hidden></p>
+    </section>
     <ul class="files"></ul>
   </main>
 
@@ -135,7 +222,7 @@
       const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveKey"]);
       return crypto.subtle.deriveKey(
         { name: "PBKDF2", hash: "SHA-256", salt, iterations },
-        base, { name: "AES-GCM", length: 256 }, true, ["decrypt"]
+        base, { name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]
       );
     }
 
@@ -143,8 +230,11 @@
 
     async function getFile(f) {
       const res = await fresh("data/" + f.id + ".bin");
-      if (!res.ok) throw new Error(res.status);
-      const buf = new Uint8Array(await res.arrayBuffer());
+      let buf;
+      if (res.ok) buf = new Uint8Array(await res.arrayBuffer());
+      // アップロードしたばかりで、まだサイトに出ていないファイルは受付から取ってくる
+      else if (res.status === 404 && box.uploader) buf = bytes((await ask("file", { id: f.id })).data);
+      else throw new Error(res.status);
       const plain = await decrypt(buf.slice(0, 12), buf.slice(12));
       const type = /\.pdf$/i.test(f.name) ? "application/pdf" : "application/octet-stream";
       return URL.createObjectURL(new Blob([plain], { type }));
@@ -176,7 +266,7 @@
       }
     }
 
-    const sortBox = document.querySelector(".sort");
+    const sortBox = document.querySelector(".tools");
     const sortSelect = sortBox.querySelector("select");
     const byName = (a, b) => a.name.localeCompare(b.name, "ja", { numeric: true });
     const sorters = {
@@ -353,9 +443,10 @@
       return JSON.parse(new TextDecoder().decode(await decrypt(bytes(vault.iv), bytes(vault.data))));
     }
 
-    function unlocked(files) {
+    function unlocked(vault, opened) {
       logout.hidden = false;
-      show(files);
+      setBox(vault, opened);
+      show(box);
     }
 
     logout.addEventListener("click", () => {
@@ -384,11 +475,237 @@
         }
         input.value = "";
         await remember(vault.salt);
-        unlocked(files);
+        unlocked(vault, files);
       } catch {
         say("読み込めませんでした。少し時間をおいて、もう一度ためしてください。");
       } finally {
         button.disabled = false;
+      }
+    });
+
+    // ---------- アップロード ----------
+    // ブラウザで暗号化してから、自分の Google Apps Script（uploader.gs）に送り、そこから GitHub に保存する。
+    // GitHub のトークンは Apps Script の中にだけあり、このページやリポジトリには入れない。
+    // Apps Script には、資料のパスワードから作った合言葉（UPLOAD_KEY）を毎回いっしょに送って本人だと確かめてもらう。
+    const MAX = 25 * 1024 * 1024;
+    let box = { folders: [], files: [] };
+    let meta = null; // vault.json の salt と iterations
+
+    function setBox(vault, opened) {
+      box = Array.isArray(opened) ? { folders: [], files: opened } : opened;
+      box.folders = box.folders || [];
+      meta = { salt: vault.salt, iterations: vault.iterations };
+      upOpen.hidden = !box.uploader;
+      setupOpen.textContent = box.uploader ? "⚙ 設定" : "アップロードの設定";
+    }
+
+    const toBase64 = (u8) => {
+      let s = "";
+      for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode(...u8.subarray(i, i + 0x8000));
+      return btoa(s);
+    };
+    const hex = (u8) => [...u8].map((b) => b.toString(16).padStart(2, "0")).join("");
+
+    // 合言葉：鍵そのものは出さず、鍵から作ったハッシュを使う
+    async function uploadKey() {
+      const raw = new Uint8Array(await crypto.subtle.exportKey("raw", key));
+      const label = new TextEncoder().encode("shiryo-upload:");
+      const both = new Uint8Array(label.length + raw.length);
+      both.set(label);
+      both.set(raw, label.length);
+      return hex(new Uint8Array(await crypto.subtle.digest("SHA-256", both)));
+    }
+
+    // 受付（Apps Script）に頼む。text/plain で送ると、ブラウザの事前確認なしで届く
+    async function ask(action, extra = {}, url = box.uploader) {
+      const res = await fetch(url, { method: "POST", body: JSON.stringify({ action, auth: await uploadKey(), ...extra }) });
+      const out = await res.json();
+      if (!out.ok) throw Object.assign(new Error(out.error), { code: out.error });
+      return out;
+    }
+
+    async function seal(plain) {
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const data = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, plain));
+      const out = new Uint8Array(12 + data.length);
+      out.set(iv);
+      out.set(data, 12);
+      return out;
+    }
+
+    function localNow() {
+      const d = new Date();
+      const p = (n) => String(n).padStart(2, "0");
+      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+    }
+
+    // いちばん新しい一覧を受付から取ってきて change で書きかえ、ファイルといっしょに 1 コミットで保存する
+    async function save(message, change, files = [], url = box.uploader) {
+      for (let attempt = 0; ; attempt++) {
+        const { head, vault: text } = await ask("vault", {}, url);
+        const latest = JSON.parse(text);
+        if (latest.salt !== meta.salt) throw Object.assign(new Error("changed"), { code: "changed" });
+        const opened = await openVault(latest);
+        const next = Array.isArray(opened) ? { folders: [], files: opened } : opened;
+        next.folders = next.folders || [];
+        const remove = change(next);
+        const sealed = await seal(new TextEncoder().encode(JSON.stringify(next)));
+        const vault = { v: 2, kdf: "PBKDF2-SHA256", iterations: meta.iterations, salt: meta.salt, iv: toBase64(sealed.slice(0, 12)), data: toBase64(sealed.slice(12)) };
+        try {
+          await ask("commit", { head, message, vault: JSON.stringify(vault), files, remove }, url);
+          return next;
+        } catch (e) {
+          // ちょうど同じときにほかの変更が入ったら、最新の状態からやり直す
+          if (e.code === "conflict" && attempt < 2) continue;
+          throw e;
+        }
+      }
+    }
+
+    function note(el, text, error) {
+      el.textContent = text;
+      el.hidden = !text;
+      el.classList.toggle("error", !!error);
+    }
+
+    function trouble(e) {
+      if (e.code === "changed") return "パスワードが変わっています。「ロックする」を押して、新しいパスワードで開き直してください。";
+      if (e.code === "auth") return "受付に断られました。パスワードを変えた場合は、Apps Script の UPLOAD_KEY を新しい合言葉に入れかえてください。";
+      if (e.code === "not_configured") return "受付の設定がまだです。Apps Script のスクリプト プロパティに GITHUB_TOKEN と UPLOAD_KEY を入れてください。";
+      if (e.code === "too_large") return "1 回に送れる量をこえています。何回かに分けてください。";
+      if (e.code === "server") return "受付で GitHub への保存に失敗しました。トークンの期限と権限（Contents: Read and write）を確かめてください。";
+      return "うまくいきませんでした。通信状態と受付の URL を確かめて、もう一度ためしてください。";
+    }
+
+    const upOpen = document.querySelector(".up-open");
+    const upPanel = document.querySelector(".upload");
+    const drop = upPanel.querySelector(".drop");
+    const picker = drop.querySelector("input");
+    const picked = upPanel.querySelector(".picked");
+    const upFolder = upPanel.querySelector("select");
+    const upGo = upPanel.querySelector(".up-go");
+    const upMsg = upPanel.querySelector(".msg");
+    let chosen = [];
+
+    function choose(fileList) {
+      chosen = [...fileList];
+      picked.replaceChildren(...chosen.map((f) => {
+        const li = document.createElement("li");
+        li.textContent = `${f.name}（${size(f.size)}）`;
+        return li;
+      }));
+      note(upMsg, "");
+    }
+
+    upOpen.addEventListener("click", () => {
+      setupPanel.hidden = true;
+      upPanel.hidden = false;
+      const all = ["", ...folders].sort((a, b) => rank(a.split("/")[0]) - rank(b.split("/")[0]) || a.localeCompare(b, "ja", { numeric: true }));
+      upFolder.replaceChildren(...all.map((d) => new Option(d ? "📁 " + d : "資料（いちばん上）", d, false, d === current)));
+      picker.value = "";
+      choose([]);
+    });
+    upPanel.querySelector(".up-close").addEventListener("click", () => { upPanel.hidden = true; });
+    picker.addEventListener("change", () => choose(picker.files));
+    drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
+    drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+    drop.addEventListener("drop", (e) => {
+      e.preventDefault();
+      drop.classList.remove("over");
+      choose(e.dataTransfer.files);
+    });
+
+    upGo.addEventListener("click", async () => {
+      if (!chosen.length) return note(upMsg, "ファイルを選んでください。", true);
+      if (chosen.reduce((n, f) => n + f.size, 0) > MAX) return note(upMsg, "合計 25MB をこえています。何回かに分けてください。", true);
+      const folder = upFolder.value;
+      upGo.disabled = true;
+      try {
+        const now = localNow();
+        const ready = [];
+        for (const [i, f] of chosen.entries()) {
+          note(upMsg, `暗号化しています… (${i + 1}/${chosen.length})`);
+          const id = hex(crypto.getRandomValues(new Uint8Array(12)));
+          ready.push({ entry: { id, name: f.name, size: f.size, added: now, folder }, data: toBase64(await seal(await f.arrayBuffer())) });
+        }
+        note(upMsg, "送っています…");
+        const saved = await save(
+          `資料を${ready.length}件追加` + (folder ? `（${folder}）` : ""),
+          (next) => {
+            const remove = [];
+            for (const { entry } of ready) {
+              // 同じフォルダの同じ名前は置きかえ
+              const same = (g) => g.name === entry.name && (g.folder || "") === folder;
+              next.files.filter(same).forEach((g) => remove.push(g.id));
+              next.files = next.files.filter((g) => !same(g));
+              next.files.push(entry);
+            }
+            const parts = folder ? folder.split("/") : [];
+            parts.forEach((_, i) => next.folders.push(parts.slice(0, i + 1).join("/")));
+            next.folders = [...new Set(next.folders)].sort();
+            return remove;
+          },
+          ready.map(({ entry, data }) => ({ id: entry.id, data })),
+        );
+        box = saved;
+        upPanel.hidden = true;
+        history.replaceState({ folder }, "", location.pathname + location.search);
+        show(box);
+        say(`${ready.length} 件アップロードしました。`);
+      } catch (e) {
+        note(upMsg, trouble(e), true);
+      } finally {
+        upGo.disabled = false;
+      }
+    });
+
+    // ---------- アップロードの設定（受付の URL を登録） ----------
+    const setupOpen = document.querySelector(".setup-open");
+    const setupPanel = document.querySelector(".setup");
+    const urlInput = setupPanel.querySelector("input");
+    const keyBox = setupPanel.querySelector(".upload-key");
+    const setupGo = setupPanel.querySelector(".setup-go");
+    const setupMsg = setupPanel.querySelector(".msg");
+
+    setupOpen.addEventListener("click", async () => {
+      upPanel.hidden = true;
+      setupPanel.hidden = false;
+      urlInput.value = box.uploader || "";
+      keyBox.textContent = await uploadKey();
+      note(setupMsg, "");
+    });
+    setupPanel.querySelector(".setup-close").addEventListener("click", () => { setupPanel.hidden = true; });
+    setupPanel.querySelector(".copy-key").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(keyBox.textContent);
+        note(setupMsg, "合言葉をコピーしました。");
+      } catch {
+        note(setupMsg, "コピーできませんでした。合言葉を選んでコピーしてください。", true);
+      }
+    });
+
+    setupGo.addEventListener("click", async () => {
+      const url = urlInput.value.trim();
+      if (!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(url)) {
+        return note(setupMsg, "https://script.google.com/macros/s/…/exec の形の URL を貼ってください。", true);
+      }
+      setupGo.disabled = true;
+      try {
+        note(setupMsg, "受付とつながるか確かめています…");
+        await ask("ping", {}, url);
+        note(setupMsg, "保存しています…");
+        box = await save("資料のアップロードを設定", (next) => {
+          next.uploader = url;
+          return [];
+        }, [], url);
+        setupPanel.hidden = true;
+        upOpen.hidden = false;
+        setupOpen.textContent = "⚙ 設定";
+        say("アップロードを使えるようになりました。「⬆ アップロード」から追加できます。");
+      } catch (e) {
+        note(setupMsg, trouble(e), true);
+      } finally {
+        setupGo.disabled = false;
       }
     });
 
@@ -403,8 +720,8 @@
         const vault = await loadVault();
         // パスワードが変わっていたら（salt がちがえば）使えないので、入れ直してもらう
         if (!vault || vault.salt !== saved.salt) throw new Error("changed");
-        key = await crypto.subtle.importKey("raw", bytes(saved.key), "AES-GCM", true, ["decrypt"]);
-        unlocked(await openVault(vault));
+        key = await crypto.subtle.importKey("raw", bytes(saved.key), "AES-GCM", true, ["encrypt", "decrypt"]);
+        unlocked(vault, await openVault(vault));
       } catch {
         forget();
         key = undefined;
