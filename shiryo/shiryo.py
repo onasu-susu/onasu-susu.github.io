@@ -88,7 +88,7 @@ def ask_new_password():
         return p
 
 
-# 暗号化して保存する中身：{"folders": [フォルダの一覧], "files": [ファイルの一覧], "uploader": アップロード受付の URL（あれば）}
+# 暗号化して保存する中身：{"folders": [フォルダの一覧], "files": [ファイルの一覧]}
 # （フォルダができる前の古い形は、ファイルの一覧だけのリスト）
 def load():
     """(key, salt, iterations, box) を返す。まだ何もなければ新しく作る"""
@@ -323,9 +323,6 @@ def passwd(push):
         print("暗号化し直し: " + where(f))
     save(key, salt, ITERATIONS, box)
     print("パスワードを変えました。")
-    if box.get("uploader"):
-        print("※ ブラウザからのアップロードを使っている場合は、資料のページを新しいパスワードで開き、")
-        print("   「アップロードの設定」に出る新しい合言葉を、Apps Script の UPLOAD_KEY に入れかえてください。")
     if push:
         publish("資料置き場のパスワードを変更")
 
