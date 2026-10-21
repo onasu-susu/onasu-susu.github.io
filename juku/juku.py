@@ -5,6 +5,7 @@
   python3 juku/juku.py add ~/Downloads/プリント.pdf ...   ファイルを追加してプッシュ
   python3 juku/juku.py list                               入っているファイルの一覧
   python3 juku/juku.py remove ファイル名 ...              ファイルを削除してプッシュ
+  python3 juku/juku.py rename いまの名前 新しい名前          ファイル名を変えてプッシュ
   python3 juku/juku.py passwd                             パスワードを変えて、全部のファイルを暗号化し直してプッシュ
 
 --no-push を付けると、コミット・プッシュをせずにファイルだけ書きかえます。
@@ -154,7 +155,8 @@ def add(paths, push):
         prepare_git()
     key, salt, iterations, files = load()
     DATA.mkdir(exist_ok=True)
-    today = datetime.date.today().isoformat()
+    # 日付順に並べられるよう、追加した時刻まで記録する
+    now = datetime.datetime.now().isoformat(timespec="seconds")
     for p in paths:
         old = [f for f in files if f["name"] == p.name]
         for f in old:
@@ -164,7 +166,7 @@ def add(paths, push):
         iv = secrets.token_bytes(12)
         body = p.read_bytes()
         (DATA / f"{fid}.bin").write_bytes(iv + AESGCM(key).encrypt(iv, body, None))
-        files.append({"id": fid, "name": p.name, "size": len(body), "added": today})
+        files.append({"id": fid, "name": p.name, "size": len(body), "added": now})
         print(("上書き: " if old else "追加: ") + p.name)
     save(key, salt, iterations, files)
     if push:
@@ -214,6 +216,23 @@ def passwd(push):
         publish("塾のプリント置き場のパスワードを変更")
 
 
+def rename(old, new, push):
+    if push:
+        prepare_git()
+    key, salt, iterations, files = load()
+    hit = [f for f in files if f["name"] == old]
+    if not hit:
+        sys.exit(f"その名前のファイルはありません: {old}（list で名前を確認できます）")
+    if any(f["name"] == new for f in files):
+        sys.exit(f"同じ名前のファイルがすでにあります: {new}")
+    for f in hit:
+        f["name"] = new
+    save(key, salt, iterations, files)
+    print(f"名前を変えました: {old} → {new}")
+    if push:
+        publish("塾のプリントの名前を変更")
+
+
 def show():
     if not VAULT.exists():
         print("まだファイルはありません。")
@@ -222,19 +241,23 @@ def show():
     if not files:
         print("まだファイルはありません。")
     for f in sorted(files, key=lambda f: f["name"]):
-        print(f"{f['added']}  {size(f['size']):>8}  {f['name']}")
+        print(f"{f['added'][:10]}  {size(f['size']):>8}  {f['name']}")
 
 
 def main():
     args = sys.argv[1:]
     push = "--no-push" not in args
     args = [a for a in args if a != "--no-push"]
-    if not args or args[0] not in ("add", "list", "remove", "passwd") or (args[0] in ("add", "remove") and len(args) < 2):
+    if (not args or args[0] not in ("add", "list", "remove", "rename", "passwd")
+            or (args[0] in ("add", "remove") and len(args) < 2)
+            or (args[0] == "rename" and len(args) != 3)):
         sys.exit(__doc__)
     if args[0] == "add":
         add(args[1:], push)
     elif args[0] == "remove":
         remove(args[1:], push)
+    elif args[0] == "rename":
+        rename(args[1], args[2], push)
     elif args[0] == "passwd":
         passwd(push)
     else:
