@@ -49,6 +49,13 @@
       font: inherit; font-size: 0.85rem; font-weight: 700; white-space: nowrap; cursor: pointer;
     }
     .status { color: var(--muted); }
+    .sort { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 12px; color: var(--muted); font-size: 0.9rem; }
+    .sort[hidden] { display: none; }
+    .sort select {
+      padding: 4px 10px; border: 2px solid var(--line); border-radius: 999px;
+      background: var(--surface); color: var(--text); font: inherit;
+    }
+    .files .meta { color: var(--muted); font-size: 0.8rem; white-space: nowrap; text-align: right; line-height: 1.4; }
     .back { display: inline-block; margin-bottom: 20px; color: var(--accent); font-weight: 700; text-decoration: none; }
   </style>
 </head>
@@ -61,6 +68,15 @@
       <button>ひらく</button>
     </form>
     <p class="status" hidden></p>
+    <label class="sort" hidden>
+      並べ替え
+      <select>
+        <option value="name">名前順（あ→ん）</option>
+        <option value="name-desc">名前順（ん→あ）</option>
+        <option value="new">追加日（新しい順）</option>
+        <option value="old">追加日（古い順）</option>
+      </select>
+    </label>
     <ul class="files"></ul>
   </main>
 
@@ -133,6 +149,23 @@
       }
     }
 
+    const sortBox = document.querySelector(".sort");
+    const sortSelect = sortBox.querySelector("select");
+    const byName = (a, b) => a.name.localeCompare(b.name, "ja", { numeric: true });
+    const sorters = {
+      name: byName,
+      "name-desc": (a, b) => byName(b, a),
+      // 追加日が同じときは名前順
+      new: (a, b) => b.added.localeCompare(a.added) || byName(a, b),
+      old: (a, b) => a.added.localeCompare(b.added) || byName(a, b),
+    };
+    let allFiles = [];
+
+    function day(added) {
+      const [y, m, d] = added.slice(0, 10).split("-");
+      return `${y}/${Number(m)}/${Number(d)}`;
+    }
+
     function show(files) {
       form.hidden = true;
       if (files.length === 0) {
@@ -140,8 +173,17 @@
         return;
       }
       say("");
-      files
-        .sort((a, b) => a.name.localeCompare(b.name, "ja", { numeric: true }))
+      allFiles = files;
+      sortBox.hidden = false;
+      render();
+    }
+
+    sortSelect.addEventListener("change", render);
+
+    function render() {
+      list.replaceChildren();
+      [...allFiles]
+        .sort(sorters[sortSelect.value])
         .forEach((f) => {
           const li = document.createElement("li");
 
@@ -151,8 +193,8 @@
           name.addEventListener("click", () => openFile(f));
 
           const s = document.createElement("span");
-          s.className = "size";
-          s.textContent = size(f.size);
+          s.className = "meta";
+          s.append(day(f.added), document.createElement("br"), size(f.size));
 
           const dl = document.createElement("button");
           dl.className = "dl";
