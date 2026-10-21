@@ -91,6 +91,11 @@
   </main>
 
   <script>
+    // リロードしたら、前のスクロール位置やフォルダではなく、いつもページのいちばん上から表示する
+    if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+    if (location.hash) history.replaceState(null, "", location.pathname + location.search); // 前の「#フォルダ名」の形のアドレスで開いたとき
+    window.scrollTo(0, 0);
+
     // ファイルは shiryo.py で暗号化して data/ に置いてある。
     // パスワードから鍵を作り、一覧（vault.json）とファイルをブラウザの中で元に戻す。
     const form = document.querySelector(".lock");
@@ -205,9 +210,8 @@
       }
       say("");
       sortBox.hidden = false;
-      // 前に見ていたフォルダを覚えておく（戻るボタン用）
-      current = decodeURIComponent(location.hash.slice(1));
-      if (current && !folders.includes(current)) current = "";
+      // リロードしたときや、はじめて開いたときは、いつも「資料」のいちばん上から
+      current = "";
       render();
     }
 
@@ -215,17 +219,18 @@
 
     function go(folder) {
       current = folder;
-      history.pushState(null, "", folder ? "#" + encodeURIComponent(folder) : location.pathname);
+      // アドレスは変えずに、ブラウザの「戻る」用にフォルダだけ覚えておく
+      history.pushState({ folder }, "", location.pathname + location.search);
       render();
       window.scrollTo({ top: 0 });
     }
 
-    window.addEventListener("popstate", () => {
-      if (form.hidden) {
-        current = decodeURIComponent(location.hash.slice(1));
-        if (!folders.includes(current)) current = "";
-        render();
-      }
+    window.addEventListener("popstate", (e) => {
+      if (!form.hidden) return; // まだパスワードを入れていない
+      current = (e.state && e.state.folder) || "";
+      if (!folders.includes(current)) current = "";
+      render();
+      window.scrollTo({ top: 0 });
     });
 
     function renderCrumbs() {
