@@ -65,12 +65,24 @@
     .files .folder:hover { border-color: var(--accent); }
     .files .icon { font-size: 1.4rem; line-height: 1; }
     .files .open { color: var(--accent); font-size: 1.3rem; font-weight: 900; }
+    .top-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+    .top-row .back { margin-bottom: 0; }
+    .logout {
+      padding: 4px 14px; border: 2px solid var(--line); border-radius: 999px;
+      background: var(--surface); color: var(--muted);
+      font: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer;
+    }
+    .logout:hover { border-color: var(--accent); color: var(--accent); }
+    .logout[hidden] { display: none; }
     .back { display: inline-block; margin-bottom: 20px; color: var(--accent); font-weight: 700; text-decoration: none; }
   </style>
 </head>
 <body>
   <main>
-    <a class="back" href="../">← トップへ戻る</a>
+    <div class="top-row">
+      <a class="back" href="../">← トップへ戻る</a>
+      <button class="logout" type="button" hidden>🔒 ロックする</button>
+    </div>
     <h1>資料</h1>
     <nav class="crumbs" aria-label="いまいるフォルダ" hidden></nav>
     <form class="lock">
@@ -123,7 +135,7 @@
       const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveKey"]);
       return crypto.subtle.deriveKey(
         { name: "PBKDF2", hash: "SHA-256", salt, iterations },
-        base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]
+        base, { name: "AES-GCM", length: 256 }, true, ["decrypt"]
       );
     }
 
@@ -312,35 +324,92 @@
       else say("");
     }
 
+    // ひらいた鍵を、このタブのあいだだけ覚えておく（sessionStorage は、タブやブラウザを閉じると消える）
+    // → リロードしてもパスワードを入れ直さなくてよい。共用の PC では「ロックする」かタブを閉じれば元どおり
+    const SAVED = "shiryo-key";
+    const logout = document.querySelector(".logout");
+
+    function forget() {
+      try { sessionStorage.removeItem(SAVED); } catch {}
+    }
+
+    async function remember(salt) {
+      try {
+        const raw = new Uint8Array(await crypto.subtle.exportKey("raw", key));
+        sessionStorage.setItem(SAVED, JSON.stringify({ salt, key: btoa(String.fromCharCode(...raw)) }));
+      } catch {}
+    }
+
+    async function loadVault() {
+      const res = await fresh("data/vault.json");
+      if (res.status === 404) return null;
+      if (!res.ok) throw new Error(res.status);
+      return res.json();
+    }
+
+    async function openVault(vault) {
+      return JSON.parse(new TextDecoder().decode(await decrypt(bytes(vault.iv), bytes(vault.data))));
+    }
+
+    function unlocked(files) {
+      logout.hidden = false;
+      show(files);
+    }
+
+    logout.addEventListener("click", () => {
+      forget();
+      location.reload();
+    });
+
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       button.disabled = true;
       say("確認しています…");
       try {
-        const res = await fresh("data/vault.json");
-        if (res.status === 404) {
+        const vault = await loadVault();
+        if (!vault) {
           say("まだファイルはありません。");
           return;
         }
-        if (!res.ok) throw new Error(res.status);
-        const vault = await res.json();
         key = await deriveKey(input.value, bytes(vault.salt), vault.iterations);
         let files;
         try {
-          files = JSON.parse(new TextDecoder().decode(await decrypt(bytes(vault.iv), bytes(vault.data))));
+          files = await openVault(vault);
         } catch {
           say("パスワードがちがいます。");
           input.select();
           return;
         }
         input.value = "";
-        show(files);
+        await remember(vault.salt);
+        unlocked(files);
       } catch {
         say("読み込めませんでした。少し時間をおいて、もう一度ためしてください。");
       } finally {
         button.disabled = false;
       }
     });
+
+    // このタブで一度ひらいていれば、パスワードなしでそのまま開く
+    (async () => {
+      let saved;
+      try { saved = JSON.parse(sessionStorage.getItem(SAVED) || "null"); } catch {}
+      if (!saved) return;
+      form.hidden = true;
+      say("ひらいています…");
+      try {
+        const vault = await loadVault();
+        // パスワードが変わっていたら（salt がちがえば）使えないので、入れ直してもらう
+        if (!vault || vault.salt !== saved.salt) throw new Error("changed");
+        key = await crypto.subtle.importKey("raw", bytes(saved.key), "AES-GCM", true, ["decrypt"]);
+        unlocked(await openVault(vault));
+      } catch {
+        forget();
+        key = undefined;
+        form.hidden = false;
+        say("");
+      }
+    })();
   </script>
 </body>
 </html>
