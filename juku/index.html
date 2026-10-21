@@ -12,6 +12,22 @@
   <style>
     main { max-width: 760px; margin: 0 auto; padding: 48px 16px 80px; }
     h1 { margin: 0 0 24px; font-size: 1.8rem; font-weight: 900; }
+    .lock { display: flex; flex-wrap: wrap; gap: 10px; }
+    .lock[hidden] { display: none; }
+    .lock input {
+      flex: 1; min-width: 0;
+      padding: 10px 16px;
+      border: 2px solid var(--line); border-radius: 999px;
+      background: var(--surface); color: var(--text);
+      font: inherit;
+    }
+    .lock input:focus { outline: none; border-color: var(--accent); }
+    .lock button {
+      padding: 10px 24px; border: 0; border-radius: 999px;
+      background: var(--accent); color: #fff;
+      font: inherit; font-weight: 700; cursor: pointer;
+    }
+    .lock button:disabled { opacity: 0.6; cursor: wait; }
     .files { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
     .files li {
       display: flex; align-items: center; gap: 12px;
@@ -21,13 +37,16 @@
       border-radius: 14px;
       box-shadow: var(--shadow);
     }
-    .files .name { flex: 1; min-width: 0; font-weight: 700; text-decoration: none; overflow-wrap: anywhere; }
+    .files .name {
+      flex: 1; min-width: 0; padding: 0; border: 0; background: none; color: inherit;
+      font: inherit; font-weight: 700; text-align: left; cursor: pointer; overflow-wrap: anywhere;
+    }
     .files .name:hover { color: var(--accent); }
     .files .size { color: var(--muted); font-size: 0.85rem; white-space: nowrap; }
     .files .dl {
-      padding: 4px 12px; border-radius: 999px;
+      padding: 4px 12px; border: 0; border-radius: 999px;
       background: var(--accent); color: #fff;
-      font-size: 0.85rem; font-weight: 700; text-decoration: none; white-space: nowrap;
+      font: inherit; font-size: 0.85rem; font-weight: 700; white-space: nowrap; cursor: pointer;
     }
     .status { color: var(--muted); }
     .back { display: inline-block; margin-bottom: 20px; color: var(--accent); font-weight: 700; text-decoration: none; }
@@ -37,66 +56,143 @@
   <main>
     <a class="back" href="../">← トップへ戻る</a>
     <h1>塾のファイル</h1>
-    <p class="status">読み込み中…</p>
+    <form class="lock">
+      <input type="password" placeholder="パスワード" aria-label="パスワード" autocomplete="off" required>
+      <button>ひらく</button>
+    </form>
+    <p class="status" hidden></p>
     <ul class="files"></ul>
   </main>
 
   <script>
-    // juku フォルダの中身を GitHub から取ってきて一覧にする
-    const API = "https://api.github.com/repos/onasu-susu/onasu-susu.github.io/contents/juku?ref=main";
+    // ファイルは juku.py で暗号化して data/ に置いてある。
+    // パスワードから鍵を作り、一覧（vault.json）とファイルをブラウザの中で元に戻す。
+    const form = document.querySelector(".lock");
+    const input = form.querySelector("input");
+    const button = form.querySelector("button");
     const list = document.querySelector(".files");
     const status = document.querySelector(".status");
+    let key;
 
-    function size(bytes) {
-      if (bytes < 1024) return bytes + " B";
-      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + " KB";
-      return (bytes / 1024 / 1024).toFixed(1) + " MB";
+    const bytes = (b64) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    const fresh = (path) => fetch(path + "?t=" + Date.now(), { cache: "no-store" });
+
+    function say(text) {
+      status.textContent = text;
+      status.hidden = !text;
     }
 
-    fetch(API)
-      .then((r) => {
-        if (!r.ok) throw new Error(r.status);
-        return r.json();
-      })
-      .then((items) => {
-        const files = items
-          .filter((f) => f.type === "file" && !f.name.startsWith(".") && f.name !== "index.html")
-          .sort((a, b) => a.name.localeCompare(b.name, "ja", { numeric: true }));
+    function size(n) {
+      if (n < 1024) return n + " B";
+      if (n < 1024 * 1024) return (n / 1024).toFixed(0) + " KB";
+      return (n / 1024 / 1024).toFixed(1) + " MB";
+    }
 
-        if (files.length === 0) {
-          status.textContent = "まだファイルはありません。";
-          return;
-        }
-        status.hidden = true;
+    async function deriveKey(password, salt, iterations) {
+      const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveKey"]);
+      return crypto.subtle.deriveKey(
+        { name: "PBKDF2", hash: "SHA-256", salt, iterations },
+        base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]
+      );
+    }
 
-        files.forEach((f) => {
-          const href = encodeURIComponent(f.name);
+    const decrypt = (iv, data) => crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
+
+    async function getFile(f) {
+      const res = await fresh("data/" + f.id + ".bin");
+      if (!res.ok) throw new Error(res.status);
+      const buf = new Uint8Array(await res.arrayBuffer());
+      const plain = await decrypt(buf.slice(0, 12), buf.slice(12));
+      const type = /\.pdf$/i.test(f.name) ? "application/pdf" : "application/octet-stream";
+      return URL.createObjectURL(new Blob([plain], { type }));
+    }
+
+    async function openFile(f) {
+      // ポップアップブロックされないよう、先に新しいタブを開いておく
+      const tab = window.open("", "_blank");
+      try {
+        const url = await getFile(f);
+        if (tab) tab.location = url;
+        else saveFile(f, url);
+      } catch {
+        if (tab) tab.close();
+        say("ファイルを開けませんでした。少し時間をおいて、もう一度ためしてください。");
+      }
+    }
+
+    async function saveFile(f, url) {
+      try {
+        const a = document.createElement("a");
+        a.href = url || (await getFile(f));
+        a.download = f.name;
+        document.body.append(a);
+        a.click();
+        a.remove();
+      } catch {
+        say("ファイルを保存できませんでした。少し時間をおいて、もう一度ためしてください。");
+      }
+    }
+
+    function show(files) {
+      form.hidden = true;
+      if (files.length === 0) {
+        say("まだファイルはありません。");
+        return;
+      }
+      say("");
+      files
+        .sort((a, b) => a.name.localeCompare(b.name, "ja", { numeric: true }))
+        .forEach((f) => {
           const li = document.createElement("li");
 
-          const name = document.createElement("a");
+          const name = document.createElement("button");
           name.className = "name";
-          name.href = href;
-          name.target = "_blank";
-          name.rel = "noopener";
           name.textContent = f.name;
+          name.addEventListener("click", () => openFile(f));
 
           const s = document.createElement("span");
           s.className = "size";
           s.textContent = size(f.size);
 
-          const dl = document.createElement("a");
+          const dl = document.createElement("button");
           dl.className = "dl";
-          dl.href = href;
-          dl.download = f.name;
           dl.textContent = "ダウンロード";
+          dl.addEventListener("click", () => saveFile(f));
 
           li.append(name, s, dl);
           list.append(li);
         });
-      })
-      .catch(() => {
-        status.textContent = "一覧を読み込めませんでした。少し時間をおいて、もう一度開いてください。";
-      });
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      button.disabled = true;
+      say("確認しています…");
+      try {
+        const res = await fresh("data/vault.json");
+        if (res.status === 404) {
+          say("まだファイルはありません。");
+          return;
+        }
+        if (!res.ok) throw new Error(res.status);
+        const vault = await res.json();
+        key = await deriveKey(input.value, bytes(vault.salt), vault.iterations);
+        let files;
+        try {
+          files = JSON.parse(new TextDecoder().decode(await decrypt(bytes(vault.iv), bytes(vault.data))));
+        } catch {
+          say("パスワードがちがいます。");
+          input.select();
+          return;
+        }
+        input.value = "";
+        show(files);
+      } catch {
+        say("読み込めませんでした。少し時間をおいて、もう一度ためしてください。");
+      } finally {
+        button.disabled = false;
+      }
+    });
   </script>
 </body>
 </html>
