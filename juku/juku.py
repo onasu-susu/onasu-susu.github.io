@@ -5,6 +5,7 @@
   python3 juku/juku.py add ~/Downloads/プリント.pdf ...   ファイルを追加してプッシュ
   python3 juku/juku.py list                               入っているファイルの一覧
   python3 juku/juku.py remove ファイル名 ...              ファイルを削除してプッシュ
+  python3 juku/juku.py passwd                             パスワードを変えて、全部のファイルを暗号化し直してプッシュ
 
 --no-push を付けると、コミット・プッシュをせずにファイルだけ書きかえます。
 パスワードは最初の add のときに決めます。以降は同じパスワードを入れてください。
@@ -59,7 +60,15 @@ def ask_password(new):
     if not new:
         return getpass.getpass("パスワード: ")
     print("はじめてなので、プリント置き場のパスワードを決めます。")
+    return ask_new_password()
+
+
+def ask_new_password():
+    env = os.environ.get("JUKU_NEW_PASSWORD")
+    if env:
+        return env
     print("塾の PC で入力するものです。単語を 3〜4 個つなげたような、長めのものがおすすめです。")
+    print("名前やメールアドレスなど、人に知られている文字列は使わないでください。")
     while True:
         p = getpass.getpass("新しいパスワード: ")
         if len(p) < 8:
@@ -179,6 +188,32 @@ def remove(names, push):
         publish(f"塾のプリントを{len(names)}件削除")
 
 
+def passwd(push):
+    if push:
+        prepare_git()
+    if not VAULT.exists():
+        sys.exit("まだファイルがないので、変えるパスワードがありません。最初の add でパスワードを決めてください。")
+    print("いまのパスワードを入れてください。")
+    old_key, _, _, files = load()
+    print("新しいパスワードを決めます。")
+    salt = secrets.token_bytes(16)
+    key = derive_key(ask_new_password(), salt, ITERATIONS)
+    # 全部のファイルを新しい鍵で暗号化し直す。古い鍵では開けなくなるよう、ファイル名（id）も新しくする
+    for f in files:
+        old = DATA / f"{f['id']}.bin"
+        buf = old.read_bytes()
+        body = AESGCM(old_key).decrypt(buf[:12], buf[12:], None)
+        f["id"] = secrets.token_hex(12)
+        iv = secrets.token_bytes(12)
+        (DATA / f"{f['id']}.bin").write_bytes(iv + AESGCM(key).encrypt(iv, body, None))
+        old.unlink()
+        print("暗号化し直し: " + f["name"])
+    save(key, salt, ITERATIONS, files)
+    print("パスワードを変えました。")
+    if push:
+        publish("塾のプリント置き場のパスワードを変更")
+
+
 def show():
     if not VAULT.exists():
         print("まだファイルはありません。")
@@ -194,12 +229,14 @@ def main():
     args = sys.argv[1:]
     push = "--no-push" not in args
     args = [a for a in args if a != "--no-push"]
-    if not args or args[0] not in ("add", "list", "remove") or (args[0] != "list" and len(args) < 2):
+    if not args or args[0] not in ("add", "list", "remove", "passwd") or (args[0] in ("add", "remove") and len(args) < 2):
         sys.exit(__doc__)
     if args[0] == "add":
         add(args[1:], push)
     elif args[0] == "remove":
         remove(args[1:], push)
+    elif args[0] == "passwd":
+        passwd(push)
     else:
         show()
 
