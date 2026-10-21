@@ -1,3 +1,31 @@
+// ページ内のリンク：押してもアドレスに「#games」などを付けずにスクロールだけする。
+// アドレスに # が残らないので、リロードするといつもページのいちばん上から表示される
+if ("scrollRestoration" in history) history.scrollRestoration = "manual"; // リロード前のスクロール位置を使わない
+
+document.querySelectorAll('a[href^="#"]').forEach((a) => {
+  a.addEventListener("click", (e) => {
+    const target = document.getElementById(a.getAttribute("href").slice(1));
+    if (!target) return;
+    e.preventDefault();
+    target.scrollIntoView();
+  });
+});
+
+{
+  const nav = performance.getEntriesByType("navigation")[0];
+  const reload = nav && nav.type === "reload";
+  const hash = location.hash;
+  // アドレスの # は消しておく（次にリロードしたときに、そこへ飛ばないように）
+  if (hash) history.replaceState(null, "", location.pathname + location.search);
+  if (reload || !hash) {
+    window.scrollTo(0, 0);
+  } else {
+    // 「…/#photos」のようなリンクから来たときは、その場所を見せる
+    const target = document.getElementById(decodeURIComponent(hash.slice(1)));
+    if (target) target.scrollIntoView();
+  }
+}
+
 // 写真のしぼりこみと「もっと見る」、大きく見る画面
 const figures = [...document.querySelectorAll(".gallery figure")];
 const buttons = document.querySelectorAll(".filters button");
