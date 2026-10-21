@@ -1,22 +1,60 @@
-// 写真のしぼりこみと、大きく見る画面
+// 写真のしぼりこみと「もっと見る」、大きく見る画面
 const figures = [...document.querySelectorAll(".gallery figure")];
 const buttons = document.querySelectorAll(".filters button");
+const moreBox = document.querySelector(".gallery-more");
+const moreButton = moreBox.querySelector("button");
+const FIRST = 4; // 最初に見せる枚数
+let category = "all";
+let expanded = false;
+
+// しぼりこみに合う写真（「もっと見る」でかくれている写真もふくむ）
+function matched() {
+  return figures.filter((f) => category === "all" || f.dataset.cat === category);
+}
+
+function layout() {
+  const list = matched();
+  figures.forEach((f) => (f.hidden = true));
+  list.forEach((f, i) => {
+    const show = expanded || i < FIRST;
+    if (show && f.hidden && i >= FIRST) {
+      f.classList.remove("fade-in");
+      void f.offsetWidth; // アニメーションをもう一度動かすため
+      f.classList.add("fade-in");
+    }
+    f.hidden = !show;
+  });
+  const rest = list.length - FIRST;
+  moreBox.hidden = rest <= 0;
+  moreButton.textContent = expanded ? "閉じる" : "もっと見る（残り " + rest + " 枚）";
+  moreButton.setAttribute("aria-expanded", expanded);
+}
 
 buttons.forEach((b) => {
   b.addEventListener("click", () => {
     buttons.forEach((x) => x.classList.toggle("on", x === b));
-    const cat = b.dataset.filter;
-    figures.forEach((f) => (f.hidden = cat !== "all" && f.dataset.cat !== cat));
+    category = b.dataset.filter;
+    expanded = false;
+    layout();
   });
 });
+
+moreButton.addEventListener("click", () => {
+  expanded = !expanded;
+  layout();
+  if (!expanded) document.getElementById("photos").scrollIntoView({ behavior: "smooth" });
+});
+
+layout();
 
 const viewer = document.querySelector(".viewer");
 const viewImg = viewer.querySelector("img");
 const viewCap = viewer.querySelector("figcaption");
 let index = 0;
 
+// 大きく見る画面では、かくれている写真も ‹ › で順番に見られる
 function visible() {
-  return figures.filter((f) => !f.hidden);
+  return matched();
 }
 
 function show(i) {
