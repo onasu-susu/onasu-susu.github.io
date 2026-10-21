@@ -611,16 +611,17 @@ h1 .en {
   .stats span br { display: none; }
 }
 
-/* 塾のファイル */
-.juku-link {
+/* 資料置き場へのリンク */
+.shiryo-link {
   display: flex;
   align-items: center;
   gap: 18px;
   text-decoration: none;
   transition: transform 0.2s;
 }
-.juku-link:hover { transform: translateY(-4px); }
-.juku-icon { font-size: 2.2rem; }
-.juku-text { flex: 1; }
-.juku-text b { display: block; font-size: 1.15rem; font-weight: 900; }
-.juku-arrow { font-size: 1.6rem; font-weight: 900; color: var(--accent); }
+.shiryo-link:hover { transform: translateY(-4px); }
+.shiryo-icon { font-size: 2.2rem; }
+.shiryo-text { flex: 1; }
+.shiryo-text b { display: block; font-size: 1.15rem; font-weight: 900; }
+.shiryo-text span { color: var(--muted); font-size: 0.9rem; }
+.shiryo-arrow { font-size: 1.6rem; font-weight: 900; color: var(--accent); }
