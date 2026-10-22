@@ -625,3 +625,18 @@ h1 .en {
 .shiryo-text b { display: block; font-size: 1.15rem; font-weight: 900; }
 .shiryo-text span { color: var(--muted); font-size: 0.9rem; }
 .shiryo-arrow { font-size: 1.6rem; font-weight: 900; color: var(--accent); }
+
+/* ブラウザで遊べるゲームのカード */
+.card-play { border: 2px solid var(--accent); }
+.card-play .shot { position: relative; display: block; }
+.card-play .badge {
+  position: absolute; bottom: 12px; left: 12px;
+  padding: 4px 12px; border-radius: 999px;
+  background: var(--accent); color: #fff;
+  font-size: 0.85rem; font-weight: 900;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+.card-play h3 a { color: inherit; text-decoration: none; }
+.card-play h3 a:hover { color: var(--accent); }
+.card-play .body { display: flex; flex-direction: column; flex: 1; }
+.card-play .button.play { align-self: flex-start; margin-top: 18px; padding: 10px 28px; }
