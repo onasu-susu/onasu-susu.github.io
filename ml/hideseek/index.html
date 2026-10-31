@@ -12,23 +12,23 @@
     :root {
       --bg: #fff8f0; --surface: #ffffff; --text: #2b2440; --muted: #6d6585; --line: #f0e4d8;
       --accent: #ff6f91; --accent-2: #ffa733; --grid: #eee7df;
-      --hider: #2a78d6; --seeker: #eb6834; --flee: #1baf7a; --shooter: #eda100;
-      --r1: #9a9893; --r2: #2a78d6; --r3: #eb6834;
+      --hider: #2a78d6; --seeker: #eb6834; --flee: #1baf7a; --shooter: #eda100; --painter: #e87ba4;
+      --r1: #9a9893; --r2: #2a78d6; --r3: #1baf7a; --r4: #eb6834;
       --good: #0ca30c; --warn: #d97a00; --bad: #d03b3b;
       --shadow: 0 10px 30px rgba(60, 40, 80, 0.08);
     }
     @media (prefers-color-scheme: dark) {
       :root:not([data-theme="light"]) {
         --bg: #14131f; --surface: #1e1d2e; --text: #f1eefa; --muted: #aaa3c2; --line: #2e2c44; --grid: #2b2a3f;
-        --hider: #3987e5; --seeker: #d95926; --flee: #199e70; --shooter: #c98500;
-        --r1: #8d8b86; --r2: #3987e5; --r3: #d95926;
+        --hider: #3987e5; --seeker: #d95926; --flee: #199e70; --shooter: #c98500; --painter: #d55181;
+        --r1: #8d8b86; --r2: #3987e5; --r3: #199e70; --r4: #d95926;
         --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
       }
     }
     :root[data-theme="dark"] {
       --bg: #14131f; --surface: #1e1d2e; --text: #f1eefa; --muted: #aaa3c2; --line: #2e2c44; --grid: #2b2a3f;
-      --hider: #3987e5; --seeker: #d95926; --flee: #199e70; --shooter: #c98500;
-      --r1: #8d8b86; --r2: #3987e5; --r3: #d95926;
+      --hider: #3987e5; --seeker: #d95926; --flee: #199e70; --shooter: #c98500; --painter: #d55181;
+      --r1: #8d8b86; --r2: #3987e5; --r3: #199e70; --r4: #d95926;
       --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
     }
     * { box-sizing: border-box; }
@@ -74,6 +74,7 @@
     .tablewrap { overflow-x: auto; }
     table { border-collapse: collapse; width: 100%; font-size: .9rem; min-width: 560px; }
     th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    td small { white-space: normal; }
     th { color: var(--muted); font-weight: 700; }
     td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
     .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: 0; }
@@ -101,13 +102,15 @@
 
   <div class="tiles">
     <div class="card tile"><div class="label">直近50試合で見つかった人数</div><div class="value" id="t-avg">–</div><div class="sub" id="t-avg-sub"></div></div>
-    <div class="card tile"><div class="label">試合数（3回目）</div><div class="value" id="t-matches">–</div><div class="sub">1試合 = 鬼2人 vs 隠れる10人・3分</div></div>
-    <div class="card tile"><div class="label">学習時間（3回目）</div><div class="value" id="t-hours">–</div><div class="sub" id="t-hours-sub"></div></div>
+    <div class="card tile"><div class="label">試合数（<span class="rno">今の回</span>・再開後）</div><div class="value" id="t-matches">–</div><div class="sub">1試合 = 鬼2人 vs 隠れる10人・3分</div></div>
+    <div class="card tile"><div class="label">学習時間（<span class="rno">今の回</span>）</div><div class="value" id="t-hours">–</div><div class="sub" id="t-hours-sub"></div></div>
     <div class="card tile"><div class="label">強さの点数 ELO（鬼 / 隠れる役）</div><div class="value" id="t-elo">–</div><div class="sub">はじめは 1200・過去の自分とくらべた点数</div></div>
   </div>
 
   <h2>Claude の見解</h2>
   <div class="card opinion" id="opinion"><p class="when">読みこみ中…</p></div>
+
+  <details class="card opinion" style="margin-top:14px"><summary style="cursor:pointer;font-weight:700">3回目のまとめ（学習を終えたときの見解）</summary><div id="past-r3"></div></details>
 
   <h2>数字から見た総評（自動）</h2>
   <div class="card"><ul class="notes" id="notes"></ul><p id="errors" class="err"></p></div>
@@ -121,7 +124,7 @@
   <h2>グラフ</h2>
   <div class="charts">
     <div class="card chart">
-      <h3>1試合で見つかった人数 ― 1〜3回目の比較</h3>
+      <h3>1試合で見つかった人数 ― 回ごとの比較</h3>
       <div class="desc">横軸 = その回の学習を始めてからの時間。なめらかにした線。ルールどうし（げきむず）は 4.60 人。</div>
       <div class="legend" id="lg-rounds"></div>
       <div class="box"><canvas id="c-rounds" aria-label="回ごとの見つかった人数の推移"></canvas></div>
@@ -143,7 +146,7 @@
   </div>
   <div class="charts two" style="margin-top:14px" id="rewards"></div>
 
-  <h2>4つの頭脳の数字</h2>
+  <h2>頭脳ごとの数字</h2>
   <div class="card tablewrap">
     <table>
       <thead><tr><th>頭脳</th><th>学ぶ判断</th><th class="num">Step</th><th class="num">ほうび（はじめ→いま）</th><th class="num">迷い具合</th><th class="num">ELO</th></tr></thead>
@@ -170,11 +173,16 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
+const JOBS = {
+  3: { HSSeeker: "次にどの隠れ場所を見に行くか（候補8か所）", HSHider: "どこに隠れるか（候補12か所）", HSShooter: "待つ / 撃つ / あきらめる" },
+  4: { HSSeeker: "部屋じゅうの 25cm マス 616 個から、次に見に行く所", HSHider: "616 マスから隠れる所", HSShooter: "待つ / 撃つ / あきらめる / 回りこむ" },
+};
 const BRAINS = [
-  { key: "HSSeeker",  name: "鬼：見に行く場所",   job: "次にどの隠れ場所を見に行くか（8択）", color: "--seeker" },
-  { key: "HSHider",   name: "隠れる役：隠れ場所", job: "どこに隠れるか（12択）",             color: "--hider" },
-  { key: "HSShooter", name: "鬼：撃つ判断",       job: "待つ / 撃つ / あきらめる",           color: "--shooter" },
-  { key: "HSFlee",    name: "隠れる役：逃げる判断", job: "じっとする / 逃げる",              color: "--flee" },
+  { key: "HSSeeker",  name: "鬼：見に行く場所",     color: "--seeker" },
+  { key: "HSHider",   name: "隠れる役：隠れ場所",   color: "--hider" },
+  { key: "HSShooter", name: "鬼：撃つ判断",         color: "--shooter" },
+  { key: "HSFlee",    name: "隠れる役：逃げる判断", color: "--flee", job: "じっとする / 逃げる" },
+  { key: "HSPainter", name: "隠れる役：色の塗り方", color: "--painter", job: "上半身・下半身の色（各6色）" },
 ];
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const $ = id => document.getElementById(id);
@@ -220,7 +228,8 @@ async function render() {
   $("state").className = "pill " + st[0];
   $("state").lastElementChild.textContent = st[1];
   $("updated").textContent = `更新 ${d.updated}`;
-  $("started").textContent = `3回目の開始 ${d.started}`;
+  $("started").textContent = `${d.round}回目の開始 ${d.started}`;
+  document.querySelectorAll(".rno").forEach(e => e.textContent = `${d.round}回目`);
 
   const diff = d.avg50 - d.ruleBaseline;
   $("t-avg").innerHTML = `${d.avg50 ?? "–"}<small>人</small>`;
@@ -236,9 +245,9 @@ async function render() {
   $("recent").innerHTML = d.recent.map((v, i) => `<span style="--v:${v}" title="${d.matches - d.recent.length + i + 1}試合目：${v}人">${v}</span>`).join("");
 
   // 回どうし
-  const rc = ["--r1", "--r2", "--r3"];
+  const rc = ["--r1", "--r2", "--r3", "--r4"];
   legend("lg-rounds", d.rounds.map((r, i) => [`${r.label}（いま ${r.last.toFixed(1)} 人）`, rc[i]]));
-  line("c-rounds", d.rounds.map((r, i) => ({ label: r.label, data: r.series, color: rc[i] })), { yMin: 3, yMax: 8, yFmt: v => (+v).toFixed(1) + "人" });
+  line("c-rounds", d.rounds.map((r, i) => ({ label: r.label, data: r.series, color: rc[i] })), { yMin: 0, yMax: 8, yFmt: v => (+v).toFixed(1) + "人" });
 
   const xMax = Math.ceil(d.hours);
   const present = BRAINS.filter(x => b[x.key]);
@@ -257,7 +266,9 @@ async function render() {
 
   $("tbl").innerHTML = present.map(x => {
     const r = b[x.key];
-    return `<tr><td><span class="sw" style="background:${css(x.color)}"></span>${esc(x.name)}</td><td>${esc(x.job)}</td>
+    const job = x.job || JOBS[d.round]?.[x.key] || "";
+    const paused = r.lastHour < d.hours - 1 ? `<br><small style="color:var(--muted)">${r.lastHour.toFixed(1)} 時間目から学習を止めてルールで動作</small>` : "";
+    return `<tr><td><span class="sw" style="background:${css(x.color)}"></span>${esc(x.name)}</td><td>${esc(job)}${paused}</td>
       <td class="num">${r.step.toLocaleString()}</td><td class="num">${r.rewardFirst.toFixed(2)} → ${r.rewardSmooth.toFixed(2)}</td>
       <td class="num">${Math.round(r.entropyRatio * 100)}%</td><td class="num">${r.elo ? Math.round(r.elo) : "—"}</td></tr>`;
   }).join("");
@@ -266,6 +277,10 @@ async function render() {
     const o = await getJSON("commentary.json");
     $("opinion").innerHTML = `<p class="when">${esc(o.updated)} 時点のデータを読んで</p>` + o.paragraphs.map(p => `<p>${esc(p)}</p>`).join("");
   } catch { $("opinion").innerHTML = `<p class="when">まだありません</p>`; }
+  try {
+    const o = await getJSON("commentary_r3.json");
+    $("past-r3").innerHTML = `<p class="when">${esc(o.updated)} 時点</p>` + o.paragraphs.map(p => `<p>${esc(p)}</p>`).join("");
+  } catch {}
 }
 
 render().catch(e => { $("state").lastElementChild.textContent = "データを読みこめませんでした"; console.error(e); });
