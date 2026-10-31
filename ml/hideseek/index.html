@@ -13,7 +13,7 @@
       --bg: #fff8f0; --surface: #ffffff; --text: #2b2440; --muted: #6d6585; --line: #f0e4d8;
       --accent: #ff6f91; --accent-2: #ffa733; --grid: #eee7df;
       --hider: #2a78d6; --seeker: #eb6834; --flee: #1baf7a; --shooter: #eda100; --painter: #e87ba4;
-      --r1: #9a9893; --r2: #2a78d6; --r3: #1baf7a; --r4: #eb6834;
+      --r1: #9a9893; --r2: #2a78d6; --r3: #1baf7a; --r4: #eb6834; --r5: #eda100; --r6: #6250d6;
       --good: #0ca30c; --warn: #d97a00; --bad: #d03b3b;
       --shadow: 0 10px 30px rgba(60, 40, 80, 0.08);
     }
@@ -21,14 +21,14 @@
       :root:not([data-theme="light"]) {
         --bg: #14131f; --surface: #1e1d2e; --text: #f1eefa; --muted: #aaa3c2; --line: #2e2c44; --grid: #2b2a3f;
         --hider: #3987e5; --seeker: #d95926; --flee: #199e70; --shooter: #c98500; --painter: #d55181;
-        --r1: #8d8b86; --r2: #3987e5; --r3: #199e70; --r4: #d95926;
+        --r1: #8d8b86; --r2: #3987e5; --r3: #199e70; --r4: #d95926; --r5: #c98500; --r6: #9085e9;
         --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
       }
     }
     :root[data-theme="dark"] {
       --bg: #14131f; --surface: #1e1d2e; --text: #f1eefa; --muted: #aaa3c2; --line: #2e2c44; --grid: #2b2a3f;
       --hider: #3987e5; --seeker: #d95926; --flee: #199e70; --shooter: #c98500; --painter: #d55181;
-      --r1: #8d8b86; --r2: #3987e5; --r3: #199e70; --r4: #d95926;
+      --r1: #8d8b86; --r2: #3987e5; --r3: #199e70; --r4: #d95926; --r5: #c98500; --r6: #9085e9;
       --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
     }
     * { box-sizing: border-box; }
@@ -83,6 +83,12 @@
     @media (max-width: 560px) { dl.gloss { grid-template-columns: 1fr; } dl.gloss dd { margin-bottom: 8px; } }
     footer { margin-top: 48px; color: var(--muted); font-size: .85rem; }
     .err { color: var(--bad); }
+    details.ver { border-top: 1px solid var(--line); padding: 8px 0; }
+    details.ver summary { cursor: pointer; display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+    details.ver summary span { color: var(--muted); font-size: .85rem; }
+    details.ver summary .peek { flex-basis: 100%; }
+    details.ver[open] summary .peek { display: none; }
+    details.ver p { margin: 8px 0; font-size: .95rem; }
   </style>
 </head>
 <body>
@@ -110,7 +116,8 @@
   <h2>Claude の見解</h2>
   <div class="card opinion" id="opinion"><p class="when">読みこみ中…</p></div>
 
-  <details class="card opinion" style="margin-top:14px"><summary style="cursor:pointer;font-weight:700">3回目のまとめ（学習を終えたときの見解）</summary><div id="past-r3"></div></details>
+  <h2>これまでの見解 <small id="hist-count" style="color:var(--muted);font-size:.85rem;font-weight:700"></small></h2>
+  <div class="card"><p class="desc" style="margin-top:0;color:var(--muted);font-size:.85rem">見解を書き直すたびに、前の版をここに残しています。新しい版が上です。</p><div id="history"></div></div>
 
   <h2>数字から見た総評（自動）</h2>
   <div class="card"><ul class="notes" id="notes"></ul><p id="errors" class="err"></p></div>
@@ -176,6 +183,8 @@
 const JOBS = {
   3: { HSSeeker: "次にどの隠れ場所を見に行くか（候補8か所）", HSHider: "どこに隠れるか（候補12か所）", HSShooter: "待つ / 撃つ / あきらめる" },
   4: { HSSeeker: "部屋じゅうの 25cm マス 616 個から、次に見に行く所", HSHider: "616 マスから隠れる所", HSShooter: "待つ / 撃つ / あきらめる / 回りこむ" },
+  5: { HSShooter: "待つ / 撃つ / あきらめる / 回りこむ（7×7 の小さな画像も見る）" },
+  6: { HSShooter: "待つ / 撃つ / あきらめる / 回りこむ（5回目の続き）", HSHider: "616 マスから隠れる所（4回目の続き）", HSPainter: "上半身・下半身の色（4回目の続き）" },
 };
 const BRAINS = [
   { key: "HSSeeker",  name: "鬼：見に行く場所",     color: "--seeker" },
@@ -232,20 +241,21 @@ async function render() {
   document.querySelectorAll(".rno").forEach(e => e.textContent = `${d.round}回目`);
 
   const diff = d.avg50 - d.ruleBaseline;
-  $("t-avg").innerHTML = `${d.avg50 ?? "–"}<small>人</small>`;
-  $("t-avg-sub").textContent = `ルールどうし ${d.ruleBaseline} 人より ${diff >= 0 ? "+" : ""}${diff.toFixed(2)}`;
+  $("t-avg").innerHTML = d.avg50 == null ? "–" : `${d.avg50}<small>人</small>`;
+  $("t-avg-sub").textContent = d.avg50 == null ? "この回の試合の記録はまだありません" : `ルールどうし ${d.ruleBaseline} 人より ${diff >= 0 ? "+" : ""}${diff.toFixed(2)}`;
   $("t-matches").innerHTML = `${d.matches.toLocaleString()}<small>試合</small>`;
   $("t-hours").innerHTML = `${d.hours.toFixed(1)}<small>時間</small>`;
   $("t-hours-sub").textContent = `ログの最終時刻 ${d.dataUntil.slice(11)}`;
   const b = d.brains;
-  $("t-elo").innerHTML = `${Math.round(b.HSSeeker?.elo ?? 0)}<small>/</small> ${Math.round(b.HSHider?.elo ?? 0)}`;
+  const hasElo = b.HSSeeker?.elo && b.HSHider?.elo;
+  $("t-elo").innerHTML = hasElo ? `${Math.round(b.HSSeeker.elo)}<small>/</small> ${Math.round(b.HSHider.elo)}` : "—";
 
   $("notes").innerHTML = d.notes.map(n => `<li>${esc(n)}</li>`).join("");
   $("errors").textContent = d.errors.length ? "ログのエラー：" + d.errors.join(" / ") : "";
   $("recent").innerHTML = d.recent.map((v, i) => `<span style="--v:${v}" title="${d.matches - d.recent.length + i + 1}試合目：${v}人">${v}</span>`).join("");
 
   // 回どうし
-  const rc = ["--r1", "--r2", "--r3", "--r4"];
+  const rc = ["--r1", "--r2", "--r3", "--r4", "--r5", "--r6"];
   legend("lg-rounds", d.rounds.map((r, i) => [`${r.label}（いま ${r.last.toFixed(1)} 人）`, rc[i]]));
   line("c-rounds", d.rounds.map((r, i) => ({ label: r.label, data: r.series, color: rc[i] })), { yMin: 0, yMax: 8, yFmt: v => (+v).toFixed(1) + "人" });
 
@@ -278,8 +288,11 @@ async function render() {
     $("opinion").innerHTML = `<p class="when">${esc(o.updated)} 時点のデータを読んで</p>` + o.paragraphs.map(p => `<p>${esc(p)}</p>`).join("");
   } catch { $("opinion").innerHTML = `<p class="when">まだありません</p>`; }
   try {
-    const o = await getJSON("commentary_r3.json");
-    $("past-r3").innerHTML = `<p class="when">${esc(o.updated)} 時点</p>` + o.paragraphs.map(p => `<p>${esc(p)}</p>`).join("");
+    const h = await getJSON("history.json");
+    $("hist-count").textContent = `第1版〜第${h.length}版`;
+    $("history").innerHTML = h.slice().reverse().map(v => `
+      <details class="ver"><summary><b>第${v.ver}版</b><span>${v.round}回目・${esc(v.updated)}</span><span class="peek">${esc(v.paragraphs[0].slice(0, 40))}…</span></summary>
+        ${v.paragraphs.map(p => `<p>${esc(p)}</p>`).join("")}</details>`).join("");
   } catch {}
 }
 
