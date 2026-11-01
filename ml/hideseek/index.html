@@ -13,7 +13,7 @@
       --bg: #fff8f0; --surface: #ffffff; --text: #2b2440; --muted: #6d6585; --line: #f0e4d8;
       --accent: #ff6f91; --accent-2: #ffa733; --grid: #eee7df;
       --hider: #2a78d6; --seeker: #eb6834; --flee: #1baf7a; --shooter: #eda100; --painter: #e87ba4;
-      --r1: #9a9893; --r2: #2a78d6; --r3: #1baf7a; --r4: #eb6834; --r5: #eda100; --r6: #6250d6;
+      --r1: #9a9893; --r2: #2a78d6; --r3: #1baf7a; --r4: #eb6834; --r5: #eda100; --r6: #6250d6; --r7: #e87ba4; --r8: #008300; --r9: #e34948;
       --good: #0ca30c; --warn: #d97a00; --bad: #d03b3b;
       --shadow: 0 10px 30px rgba(60, 40, 80, 0.08);
     }
@@ -21,14 +21,14 @@
       :root:not([data-theme="light"]) {
         --bg: #14131f; --surface: #1e1d2e; --text: #f1eefa; --muted: #aaa3c2; --line: #2e2c44; --grid: #2b2a3f;
         --hider: #3987e5; --seeker: #d95926; --flee: #199e70; --shooter: #c98500; --painter: #d55181;
-        --r1: #8d8b86; --r2: #3987e5; --r3: #199e70; --r4: #d95926; --r5: #c98500; --r6: #9085e9;
+        --r1: #8d8b86; --r2: #3987e5; --r3: #199e70; --r4: #d95926; --r5: #c98500; --r6: #9085e9; --r7: #d55181; --r8: #2e9e2e; --r9: #e66767;
         --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
       }
     }
     :root[data-theme="dark"] {
       --bg: #14131f; --surface: #1e1d2e; --text: #f1eefa; --muted: #aaa3c2; --line: #2e2c44; --grid: #2b2a3f;
       --hider: #3987e5; --seeker: #d95926; --flee: #199e70; --shooter: #c98500; --painter: #d55181;
-      --r1: #8d8b86; --r2: #3987e5; --r3: #199e70; --r4: #d95926; --r5: #c98500; --r6: #9085e9;
+      --r1: #8d8b86; --r2: #3987e5; --r3: #199e70; --r4: #d95926; --r5: #c98500; --r6: #9085e9; --r7: #d55181; --r8: #2e9e2e; --r9: #e66767;
       --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
     }
     * { box-sizing: border-box; }
@@ -185,6 +185,9 @@ const JOBS = {
   4: { HSSeeker: "部屋じゅうの 25cm マス 616 個から、次に見に行く所", HSHider: "616 マスから隠れる所", HSShooter: "待つ / 撃つ / あきらめる / 回りこむ" },
   5: { HSShooter: "待つ / 撃つ / あきらめる / 回りこむ（7×7 の小さな画像も見る）" },
   6: { HSShooter: "待つ / 撃つ / あきらめる / 回りこむ（5回目の続き）", HSHider: "616 マスから隠れる所（4回目の続き）", HSPainter: "上半身・下半身の色（4回目の続き）" },
+  7: { HSShooter: "待つ / 撃つ / あきらめる / 回りこむ（5回目から・見のがしに罰）" },
+  8: { HSSeeker: "616 マスから次に探しに行く所（4回目から・お手本もまねる）", HSShooter: "撃つ判断（7回目の続き）" },
+  9: { HSSeeker: "探す所（8回目の続き）", HSShooter: "撃つ判断（8回目の続き）", HSHider: "隠れる所（6回目の続き）", HSPainter: "色ぬり（6回目の続き）" },
 };
 const BRAINS = [
   { key: "HSSeeker",  name: "鬼：見に行く場所",     color: "--seeker" },
@@ -255,7 +258,7 @@ async function render() {
   $("recent").innerHTML = d.recent.map((v, i) => `<span style="--v:${v}" title="${d.matches - d.recent.length + i + 1}試合目：${v}人">${v}</span>`).join("");
 
   // 回どうし
-  const rc = ["--r1", "--r2", "--r3", "--r4", "--r5", "--r6"];
+  const rc = ["--r1", "--r2", "--r3", "--r4", "--r5", "--r6", "--r7", "--r8", "--r9"];
   legend("lg-rounds", d.rounds.map((r, i) => [`${r.label}（いま ${r.last.toFixed(1)} 人）`, rc[i]]));
   line("c-rounds", d.rounds.map((r, i) => ({ label: r.label, data: r.series, color: rc[i] })), { yMin: 0, yMax: 8, yFmt: v => (+v).toFixed(1) + "人" });
 
