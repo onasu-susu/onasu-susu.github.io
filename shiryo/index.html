@@ -146,7 +146,10 @@
       if (!res.ok) throw new Error(res.status);
       const buf = new Uint8Array(await res.arrayBuffer());
       const plain = await decrypt(buf.slice(0, 12), buf.slice(12));
-      const type = /\.pdf$/i.test(f.name) ? "application/pdf" : "application/octet-stream";
+      // PDF と HTML はタブで開く。ほかの種類はダウンロードになる
+      const type = /\.pdf$/i.test(f.name) ? "application/pdf"
+        : /\.html?$/i.test(f.name) ? "text/html;charset=utf-8"
+        : "application/octet-stream";
       return URL.createObjectURL(new Blob([plain], { type }));
     }
 
