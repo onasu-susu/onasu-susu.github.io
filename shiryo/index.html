@@ -58,6 +58,20 @@
     .files .meta { color: var(--muted); font-size: 0.8rem; white-space: nowrap; text-align: right; line-height: 1.4; }
     .crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: -8px 0 16px; font-weight: 700; }
     .crumbs[hidden] { display: none; }
+    .files .zip {
+      padding: 4px 12px; border: 2px solid var(--line); border-radius: 999px;
+      background: var(--surface); color: var(--text);
+      font: inherit; font-size: 0.8rem; font-weight: 700; white-space: nowrap; cursor: pointer;
+    }
+    .files .zip:hover { border-color: var(--accent); color: var(--accent); }
+    .zip:disabled { opacity: 0.6; cursor: wait; }
+    .zip-here {
+      display: block; width: 100%; margin-bottom: 12px; padding: 10px 16px;
+      border: 2px dashed var(--accent); border-radius: 14px;
+      background: var(--surface); color: var(--accent);
+      font: inherit; font-weight: 700; cursor: pointer;
+    }
+    .zip-here[hidden] { display: none; }
     .crumbs button { padding: 0; border: 0; background: none; color: var(--accent); font: inherit; cursor: pointer; }
     .crumbs span { color: var(--muted); }
     .crumbs b { color: var(--text); }
@@ -99,6 +113,7 @@
         <option value="new">追加日（降順）</option>
       </select>
     </label>
+    <button class="zip zip-here" type="button" hidden title="このフォルダの中身を ZIP にまとめてダウンロード">⬇ このフォルダをまとめてダウンロード</button>
     <ul class="files"></ul>
   </main>
 
@@ -141,11 +156,15 @@
 
     const decrypt = (iv, data) => crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
 
-    async function getFile(f) {
+    async function fileBytes(f) {
       const res = await fresh("data/" + f.id + ".bin");
       if (!res.ok) throw new Error(res.status);
       const buf = new Uint8Array(await res.arrayBuffer());
-      const plain = await decrypt(buf.slice(0, 12), buf.slice(12));
+      return new Uint8Array(await decrypt(buf.slice(0, 12), buf.slice(12)));
+    }
+
+    async function getFile(f) {
+      const plain = await fileBytes(f);
       // PDF と HTML はタブで開く。ほかの種類はダウンロードになる
       const type = /\.pdf$/i.test(f.name) ? "application/pdf"
         : /\.html?$/i.test(f.name) ? "text/html;charset=utf-8"
@@ -294,7 +313,18 @@
           const open = document.createElement("span");
           open.className = "open";
           open.textContent = "›";
-          li.append(icon, name, s, open);
+          li.append(icon, name, s);
+          if (n) {
+            const z = document.createElement("button");
+            z.className = "zip";
+            z.type = "button";
+            z.textContent = "⬇ まとめて";
+            z.title = `「${baseName(d)}」の中身をまとめて ZIP でダウンロード`;
+            z.addEventListener("click", (e) => { e.stopPropagation(); saveFolder(d, z); });
+            z.addEventListener("keydown", (e) => e.stopPropagation());
+            li.append(z);
+          }
+          li.append(open);
           li.addEventListener("click", () => go(d));
           li.addEventListener("keydown", (e) => { if (e.key === "Enter") go(d); });
           list.append(li);
@@ -327,6 +357,102 @@
 
       if (!list.children.length) say("このフォルダは空です。");
       else say("");
+      zipHere.hidden = !current || !inside(current);
+    }
+
+    // ---------- フォルダをまとめてダウンロード（ZIP） ----------
+    // 中のファイルをブラウザで元に戻して、1 つの ZIP にまとめる（PDF はもともと圧縮されているので、圧縮はしない）
+    const zipHere = document.querySelector(".zip-here");
+    zipHere.addEventListener("click", () => saveFolder(current, zipHere));
+
+    const CRC = new Uint32Array(256).map((_, n) => {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+      return c;
+    });
+    function crc32(u8) {
+      let c = 0xffffffff;
+      for (let i = 0; i < u8.length; i++) c = CRC[(c ^ u8[i]) & 0xff] ^ (c >>> 8);
+      return (c ^ 0xffffffff) >>> 0;
+    }
+
+    function makeZip(entries) {
+      const enc = new TextEncoder();
+      const d = new Date();
+      const time = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+      const date = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+      const parts = [];
+      const central = [];
+      let offset = 0;
+      for (const { path, data } of entries) {
+        const name = enc.encode(path);
+        const crc = crc32(data);
+        // ファイルごとの見出し（0x0800 = 名前が UTF-8）
+        const head = new DataView(new ArrayBuffer(30));
+        head.setUint32(0, 0x04034b50, true);
+        head.setUint16(4, 20, true);
+        head.setUint16(6, 0x0800, true);
+        head.setUint16(8, 0, true);
+        head.setUint16(10, time, true);
+        head.setUint16(12, date, true);
+        head.setUint32(14, crc, true);
+        head.setUint32(18, data.length, true);
+        head.setUint32(22, data.length, true);
+        head.setUint16(26, name.length, true);
+        parts.push(head, name, data);
+        // 最後にまとめて書く目次
+        const dir = new DataView(new ArrayBuffer(46));
+        dir.setUint32(0, 0x02014b50, true);
+        dir.setUint16(4, 20, true);
+        dir.setUint16(6, 20, true);
+        dir.setUint16(8, 0x0800, true);
+        dir.setUint16(10, 0, true);
+        dir.setUint16(12, time, true);
+        dir.setUint16(14, date, true);
+        dir.setUint32(16, crc, true);
+        dir.setUint32(20, data.length, true);
+        dir.setUint32(24, data.length, true);
+        dir.setUint16(28, name.length, true);
+        dir.setUint32(42, offset, true);
+        central.push(dir, name);
+        offset += 30 + name.length + data.length;
+      }
+      const dirSize = central.reduce((n, x) => n + x.byteLength, 0);
+      const end = new DataView(new ArrayBuffer(22));
+      end.setUint32(0, 0x06054b50, true);
+      end.setUint16(8, entries.length, true);
+      end.setUint16(10, entries.length, true);
+      end.setUint32(12, dirSize, true);
+      end.setUint32(16, offset, true);
+      return new Blob([...parts, ...central, end], { type: "application/zip" });
+    }
+
+    async function saveFolder(folder, button) {
+      const files = allFiles.filter((f) => f.folder === folder || f.folder.startsWith(folder + "/"));
+      if (!files.length) return;
+      const label = button.textContent;
+      button.disabled = true;
+      try {
+        const entries = [];
+        for (const [i, f] of files.entries()) {
+          button.textContent = `まとめています… ${i + 1}/${files.length}`;
+          // ZIP の中では、選んだフォルダから見た場所に置く（下のフォルダはそのままフォルダになる）
+          const sub = f.folder.slice(folder.length + 1);
+          entries.push({ path: (sub ? sub + "/" : "") + f.name, data: await fileBytes(f) });
+        }
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(makeZip(entries));
+        a.download = baseName(folder) + ".zip";
+        document.body.append(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+      } catch {
+        say("まとめてダウンロードできませんでした。少し時間をおいて、もう一度ためしてください。");
+      } finally {
+        button.textContent = label;
+        button.disabled = false;
+      }
     }
 
     // ひらいた鍵を、このタブのあいだだけ覚えておく（sessionStorage は、タブやブラウザを閉じると消える）
