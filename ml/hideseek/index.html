@@ -66,6 +66,10 @@
     .chart h3 { margin: 0; font-size: 1rem; }
     .chart .desc { color: var(--muted); font-size: .85rem; margin: 2px 0 8px; }
     .chart .box { position: relative; height: 240px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 10px; }
+    .chips button { font: inherit; font-size: .8rem; font-weight: 700; padding: 4px 11px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--surface); color: var(--muted); cursor: pointer; }
+    .chips button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .chips button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .85rem; color: var(--muted); margin-bottom: 6px; }
     .legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: 4px; margin-right: 5px; }
     .recent { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
@@ -110,7 +114,7 @@
     <div class="card tile"><div class="label">直近50試合で見つかった人数</div><div class="value" id="t-avg">–</div><div class="sub" id="t-avg-sub"></div></div>
     <div class="card tile"><div class="label">試合数（<span class="rno">今の回</span>・再開後）</div><div class="value" id="t-matches">–</div><div class="sub">1試合 = 鬼2人 vs 隠れる10人・3分</div></div>
     <div class="card tile"><div class="label">学習時間（<span class="rno">今の回</span>）</div><div class="value" id="t-hours">–</div><div class="sub" id="t-hours-sub"></div></div>
-    <div class="card tile"><div class="label">強さの点数 ELO（鬼 / 隠れる役）</div><div class="value" id="t-elo">–</div><div class="sub">はじめは 1200・過去の自分とくらべた点数</div></div>
+    <div class="card tile"><div class="label">強さの点数 ELO（鬼 / 隠れる役）</div><div class="value" id="t-elo">–</div><div class="sub" id="t-elo-sub">はじめは 1200・過去の自分とくらべた点数</div></div>
   </div>
 
   <h2>Claude の見解</h2>
@@ -132,7 +136,8 @@
   <div class="charts">
     <div class="card chart">
       <h3>1試合で見つかった人数 ― 回ごとの比較</h3>
-      <div class="desc">横軸 = その回の学習を始めてからの時間。なめらかにした線。ルールどうし（げきむず）は 4.60 人。</div>
+      <div class="desc">横軸 = その回の学習を始めてからの時間。なめらかにした線。ルールどうし（げきむず）は 4.60 人。ボタンで回をえらぶと、その回だけを表示します。</div>
+      <div class="chips" id="sel-rounds" role="group" aria-label="表示する回"></div>
       <div class="legend" id="lg-rounds"></div>
       <div class="box"><canvas id="c-rounds" aria-label="回ごとの見つかった人数の推移"></canvas></div>
     </div>
@@ -146,7 +151,8 @@
     </div>
     <div class="card chart">
       <h3>強さの点数（ELO）</h3>
-      <div class="desc">自己対戦する2つの頭脳だけにある。交互に上下するのはふつう。</div>
+      <div class="desc">自己対戦（鬼と隠れる役が同時に学ぶしくみ）を使った 1〜4回目だけにある。交互に上下するのはふつう。5回目からは相手の頭脳を固定して片方ずつ学ぶ方法に変えたので、ELO は出ません。</div>
+      <div class="chips" id="sel-elo" role="group" aria-label="表示する回"></div>
       <div class="legend" id="lg-elo"></div>
       <div class="box"><canvas id="c-elo" aria-label="鬼と隠れる役のELO"></canvas></div>
     </div>
@@ -202,6 +208,21 @@ const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const charts = [];
+let pickRound = null, pickElo = null;   // えらんだ回（null = すべて / いちばん新しい回）
+const shortLabel = l => l.split("（")[0];
+
+function chips(el, items, current, onPick) {
+  $(el).innerHTML = items.map(([key, label]) => `<button type="button" data-k="${esc(key)}" aria-pressed="${key === current}">${esc(label)}</button>`).join("");
+  $(el).querySelectorAll("button").forEach(btn => btn.addEventListener("click", () => onPick(btn.dataset.k)));
+}
+
+// 1つのキャンバスを描きなおす（ボタンで回をえらんだとき用）
+const own = {};
+function redraw(canvas, ...args) {
+  if (own[canvas]) { own[canvas].destroy(); charts.splice(charts.indexOf(own[canvas]), 1); }
+  line(canvas, ...args);
+  own[canvas] = charts[charts.length - 1];
+}
 
 function legend(el, items) {
   $(el).innerHTML = items.map(([label, color]) => `<span><i style="background:${css(color)}"></i>${esc(label)}</span>`).join("");
@@ -237,6 +258,7 @@ async function getJSON(name) {
 async function render() {
   const d = await getJSON("data.json");
   charts.splice(0).forEach(c => c.destroy());
+  for (const k in own) delete own[k];
 
   const st = { running: ["running", "学習中"], stalled: ["stalled", "止まっているかも"], stopped: ["stopped", "学習は止まっています"] }[d.state];
   $("state").className = "pill " + st[0];
@@ -254,6 +276,7 @@ async function render() {
   const b = d.brains;
   const hasElo = b.HSSeeker?.elo && b.HSHider?.elo;
   $("t-elo").innerHTML = hasElo ? `${Math.round(b.HSSeeker.elo)}<small>/</small> ${Math.round(b.HSHider.elo)}` : "—";
+  if (!hasElo) $("t-elo-sub").textContent = "5回目からは自己対戦を使っていないので出ません（下のグラフで1〜4回目を見られます）";
 
   $("notes").innerHTML = d.notes.map(n => `<li>${esc(n)}</li>`).join("");
   $("errors").textContent = d.errors.length ? "ログのエラー：" + d.errors.join(" / ") : "";
@@ -261,16 +284,33 @@ async function render() {
 
   // 回どうし
   const rc = ["--r1", "--r2", "--r3", "--r4", "--r5", "--r6", "--r7", "--r8", "--r9", "--r10", "--r11"];
-  legend("lg-rounds", d.rounds.map((r, i) => [`${r.label}（いま ${r.last.toFixed(1)} 人）`, rc[i]]));
-  line("c-rounds", d.rounds.map((r, i) => ({ label: r.label, data: r.series, color: rc[i] })), { yMin: 0, yMax: 10, yFmt: v => (+v).toFixed(1) + "人" });
+  const drawRounds = () => {
+    const sel = d.rounds.map((r, i) => ({ r, color: rc[i] })).filter(x => pickRound == null || x.r.run === pickRound);
+    chips("sel-rounds", [["", "すべて"], ...d.rounds.map(r => [r.run, shortLabel(r.label)])], pickRound ?? "", k => { pickRound = k || null; drawRounds(); });
+    legend("lg-rounds", sel.map(x => [`${x.r.label}（${pickRound ? "終わりごろ" : "いま"} ${x.r.last.toFixed(1)} 人）`, x.color]));
+    redraw("c-rounds", sel.map(x => ({ label: x.r.label, data: x.r.series, color: x.color })),
+      { yMin: 0, yMax: 10, yFmt: v => (+v).toFixed(1) + "人", xMax: pickRound ? Math.ceil(sel[0].r.hours) : undefined });
+  };
+  if (pickRound && !d.rounds.some(r => r.run === pickRound)) pickRound = null;
+  drawRounds();
 
   const xMax = Math.ceil(d.hours);
   const present = BRAINS.filter(x => b[x.key]);
   legend("lg-ent", present.map(x => [x.name, x.color]));
   line("c-ent", present.map(x => ({ label: x.name, data: b[x.key].series.entropy, color: x.color })), { yMin: 0, yMax: 1, yFmt: v => Math.round(v * 100) + "%", xMax });
-  const eloB = present.filter(x => b[x.key].series.elo);
-  legend("lg-elo", eloB.map(x => [x.name, x.color]));
-  line("c-elo", eloB.map(x => ({ label: x.name, data: b[x.key].series.elo, color: x.color })), { yFmt: v => Math.round(v), xMax });
+  // ELO：自己対戦をした回（data.eloRounds）からえらぶ。はじめはいちばん新しい回
+  const er = d.eloRounds || [];
+  const drawElo = () => {
+    const r = er.find(x => x.run === pickElo) || er[er.length - 1];
+    if (!r) { $("lg-elo").textContent = "ELO のある回はありません"; return; }
+    pickElo = r.run;
+    chips("sel-elo", er.map(x => [x.run, shortLabel(x.label)]), pickElo, k => { pickElo = k; drawElo(); });
+    const eb = BRAINS.filter(x => r.series[x.key]);
+    legend("lg-elo", eb.map(x => [`${x.name}（終わり ${Math.round(r.last[x.key])}）`, x.color]));
+    const hrs = Math.max(...eb.map(x => r.series[x.key].at(-1)[0]));
+    redraw("c-elo", eb.map(x => ({ label: x.name, data: r.series[x.key], color: x.color })), { yFmt: v => Math.round(v), xMax: Math.ceil(hrs) });
+  };
+  drawElo();
 
   // ほうび：目もりがちがうので頭脳ごとに別のグラフ
   $("rewards").innerHTML = present.map(x => `
